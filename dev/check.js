@@ -1,0 +1,205 @@
+// 확인 시나리오 — index.html?check 로 열면 저절로 돌고 결과를 화면에 띄운다 (window.checkResult 에도 남김)
+// 순서: 나무 베기 → 모닥불 → 닭 알 → 굽기·먹기 → 닭장 → 낚시 → 생선 굽기·먹기 → 집·잠 → 저장·불러오기
+// 루프 없이 tick() 을 직접 부르고 섬·난수가 시드로 고정이라, 동작이 같으면 마지막 "지문" 도 같다.
+//   리팩토링(동작을 안 바꾸는 정리) 전후: 지문이 EXPECT 와 같아야 한다.
+//   기능을 바꾼 뒤: 지문이 달라지는 게 맞다. 항목이 전부 통과하면 새 지문을 EXPECT 에 적는다.
+// 확인 모드는 저장 키를 따로 쓴다 (island-save-check). 진짜 저장본은 건드리지 않는다.
+// 위치를 옮길 때는 걷지 않고 바로 세운다(standAt). 길 찾기가 아니라 섬의 규칙을 확인하는 스크립트라서.
+'use strict';
+(async () => {
+  const EXPECT = 'c36e3dc6';   // 마지막으로 통과한 지문 (2026-10-18, js/ 나누기 전)
+
+  const out = [];
+  const toasts = [];
+  const errors = [];
+  addEventListener('error', (e) => errors.push(e.message));
+  const realToast = toast;
+  toast = (msg, frames) => { toasts.push(msg); realToast(msg, frames); };   // 띄운 안내도 지문에 넣는다
+
+  const check = (name, cond, detail = '') => out.push({ name, ok: !!cond, detail: String(detail) });
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  let frames = 0;
+  // n 프레임까지 돌리다 until 이 참이 되면 멈춘다. 참이 됐는지 돌려준다
+  function run(n, until) {
+    for (let i = 0; i < n; i++) {
+      tick();
+      if (++frames % 60 === 0) draw();
+      if (until && until()) return true;
+    }
+    return !until;
+  }
+  function standAt(x, y) {
+    if (blocked(x, y)) return false;
+    player.x = x; player.y = y;
+    player.still = 0; player.fish = null;
+    return true;
+  }
+  const standNear = (x, y, offsets) => offsets.some(([dx, dy]) => standAt(x + dx, y + dy));
+  const eggsOnGround = () => items.filter((it) => it.kind === 'egg').length;
+  const stumps = () => trees.filter((tr) => tr.state === 'stump').length;
+
+  // 시작 자리에서 가까운 땅부터 차례로 서 보며 버튼을 누른다. 지어졌으면 true
+  function build(id) {
+    const cx = spawn.i * TILE + 8, cy = spawn.j * TILE + 12;
+    const spots = [];
+    for (let j = 0; j < MAP_H; j++) for (let i = 0; i < MAP_W; i++)
+      if (tiles[j][i] > 0) spots.push([i * TILE + 8, j * TILE + 12]);
+    spots.sort((a, b) => Math.hypot(a[0] - cx, a[1] - cy) - Math.hypot(b[0] - cx, b[1] - cy));
+    const count = () => ({ build: fires.length, coop: coops.length, house: house ? 1 : 0 })[id];
+    const before = count();
+    for (const [x, y] of spots) for (const dir of [1, -1]) {
+      if (!standAt(x, y)) continue;
+      player.dir = dir;
+      document.getElementById(id).click();
+      if (count() > before) return true;
+    }
+    return false;
+  }
+
+  function chopOne() {
+    const tr = trees.filter((t) => t.state === 'tree')
+      .sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y))[0];
+    if (!tr || !standNear(tr.x, tr.y, [[-10, 0], [10, 0], [-10, 2], [10, 2]])) return false;
+    const log0 = inv.log;
+    return run(600, () => tr.state === 'stump') && run(300, () => inv.log >= log0 + 2);
+  }
+
+  const atFire = () => standNear(fires[0].x, fires[0].y, [[12, 0], [-12, 0], [12, 4], [-12, 4], [0, 10], [0, -8]]);
+
+  function eat() {
+    const food = inv.grilled > 0 ? 'grilled' : 'fried';
+    const full0 = player.full;
+    document.getElementById('eat').click();
+    const want = Math.min(FULL_MAX, full0 + (food === 'grilled' ? FULL_PER_FISH : FULL_PER_EGG));
+    return Math.abs(player.full - want) < 1e-9;
+  }
+
+  function summary() {
+    return {
+      player: [Math.round(player.x), Math.round(player.y), player.dir, Math.round(player.full * 10) / 10],
+      inv: { ...inv },
+      trees: trees.map((tr) => [tr.state, tr.hp, tr.regrow]),
+      fires: fires.map((f) => [f.x, f.y, f.kind ?? null, f.cook ?? null]),
+      coops: coops.map((c) => [c.x, c.y, c.timer]),
+      house: house && [house.x, house.y],
+      day,
+      sleepCool,
+      chickens: chickens.map((c) => [Math.round(c.x), Math.round(c.y), c.dir, c.egg, c.baby || 0]),
+      items: items.map((it) => [it.kind, Math.round(it.x), Math.round(it.y)]),
+    };
+  }
+  function fnv(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h.toString(16).padStart(8, '0');
+  }
+
+  try {
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* 저장소를 못 쓰면 저장 항목에서 걸린다 */ }
+
+    // 0. 처음 상태
+    check('처음 상태', Object.values(inv).every((v) => v === 0) && day === 1 && chickens.length === CHICKEN_COUNT && trees.length > 0,
+      `나무 ${trees.length} · 닭 ${chickens.length}`);
+
+    // 1. 나무 베기: 두 그루 → 통나무 4
+    const chopped = chopOne() && chopOne();
+    check('나무 베기', chopped && inv.log === 4, `통나무 ${inv.log} · 그루터기 ${stumps()} · 배 ${player.full.toFixed(1)}`);
+
+    // 2. 모닥불: 통나무 3
+    check('모닥불', build('build') && fires.length === 1 && inv.log === 1, `모닥불 ${fires.length} · 통나무 ${inv.log}`);
+
+    // 3. 닭 알: 기다렸다가 주우러 간다
+    const laid = run(60 * 30, () => eggsOnGround() > 0);
+    const egg = items.find((it) => it.kind === 'egg');
+    const gotEgg = laid && standNear(egg.x, egg.y, [[0, 2], [6, 2], [-6, 2], [0, -4], [8, 0], [-8, 0]]) && run(200, () => inv.egg >= 1);
+    check('닭 알 줍기', gotEgg, `달걀 ${inv.egg} · ${frames} 프레임째`);
+
+    // 4. 굽기 · 먹기
+    const fried = atFire() && run(600, () => inv.fried >= 1);
+    check('달걀 굽기', fried, `구운 달걀 ${inv.fried}`);
+    check('구운 달걀 먹기', fried && eat(), `배 ${player.full.toFixed(1)}`);
+
+    // 5. 닭장: 통나무는 넣어 준다. 곧 병아리가 나온다
+    inv.log += COOP_COST;
+    refreshHud();
+    const log0 = inv.log - COOP_COST;
+    check('닭장 짓기', build('coop') && coops.length === 1 && inv.log === log0, `닭장 ${coops.length} · 통나무 ${inv.log}`);
+    const n0 = chickens.length;
+    const hatched = run(60 * 6, () => chickens.length > n0);
+    check('병아리', hatched && chickens[chickens.length - 1].baby > 0, `닭 ${n0} → ${chickens.length}`);
+
+    // 6. 낚시: 낚을 수 있는 물가를 찾아 선다
+    let spot = false;
+    for (let j = 0; j < MAP_H && !spot; j++) for (let i = 0; i < MAP_W && !spot; i++) {
+      if (tiles[j][i] === 0) continue;
+      for (let y = j * TILE + 4; y < j * TILE + TILE && !spot; y += 4) for (let x = i * TILE + 2; x < i * TILE + TILE && !spot; x += 4) {
+        if (!standAt(x, y)) continue;
+        player.dir = 1;
+        spot = !nearestTree() && !!fishingSpot();
+      }
+    }
+    const cast = spot && run(FISH_STILL + 5, () => player.fish);
+    check('낚싯대 던지기', cast, `자리 ${Math.round(player.x)},${Math.round(player.y)}`);
+    const waiting = cast && run(40, () => player.fish?.state === 'wait');
+    check('일찍 누르면 안내', waiting && reel() === true && toasts[toasts.length - 1].startsWith('아직'), toasts[toasts.length - 1]);
+    const bite = waiting && run(60 * 6, () => player.fish?.state === 'bite');
+    const caught = bite && reel() === true && run(200, () => inv.fish >= 1);
+    check('물고기 낚기', caught, `생선 ${inv.fish}`);
+
+    // 7. 생선 굽기 · 먹기
+    const grilled = caught && atFire() && run(600, () => inv.grilled >= 1);
+    check('생선 굽기', grilled, `구운 생선 ${inv.grilled}`);
+    check('구운 생선 먹기', grilled && eat(), `배 ${player.full.toFixed(1)}`);
+
+    // 8. 집 · 잠: 그루터기를 하나 만들어 두고 잔다
+    chopOne();
+    inv.log += HOUSE_COST;
+    refreshHud();
+    check('집 짓기', build('house') && !!house, house ? `집 ${house.x},${house.y}` : '못 지음');
+    standAt(house.x, house.y + 8);
+    run(1);
+    check('문 앞 자기 버튼', document.getElementById('sleep').style.display === 'flex');
+    const before = { day, stumps: stumps(), eggs: eggsOnGround(), full: player.full, babies: chickens.filter((c) => c.baby > 0) };
+    goToSleep();
+    check('밤 화면', document.getElementById('night').classList.contains('on'));
+    await wait(2400);   // 밤 0.9초 + 아침 0.5초 + 0.8초 뒤 다시 움직일 수 있다
+    check('하루 지남', day === before.day + 1 && document.getElementById('day').textContent === day + '일째', `${before.day} → ${day}일째`);
+    check('밤사이 나무 회복', before.stumps > 0 && stumps() === 0, `그루터기 ${before.stumps} → ${stumps()}`);
+    check('밤사이 알', eggsOnGround() > before.eggs || before.eggs >= NIGHT_EGG_LIMIT, `땅의 알 ${before.eggs} → ${eggsOnGround()}`);
+    check('밤사이 병아리 성장', before.babies.every((c) => !c.baby), `병아리 ${before.babies.length}마리`);
+    check('자고 나면 배고픔', Math.abs(player.full - Math.max(0, before.full - SLEEP_HUNGER)) < 1e-9, `배 ${before.full.toFixed(1)} → ${player.full.toFixed(1)}`);
+    goToSleep();
+    check('바로 또 자기는 막힘', toasts[toasts.length - 1].includes('졸리지'), toasts[toasts.length - 1]);
+
+    // 9. 저장 · 불러오기
+    const saved = JSON.stringify(summary());
+    check('저장', saveGame() === true);
+    inv.log = 999; house = null; day = 1;
+    fires.length = 0; coops.length = 0; chickens.length = 0; items.length = 0;
+    check('불러오기', loadGame() === true && JSON.stringify(summary()) === saved, `집 ${!!house} · ${day}일째 · 닭 ${chickens.length}`);
+    localStorage.setItem(SAVE_KEY, '{broken');
+    let broken;
+    try { broken = loadGame(); } catch (e) { broken = 'throw: ' + e.message; }
+    check('깨진 저장본은 무시', broken === false, broken);
+    localStorage.removeItem(SAVE_KEY);
+  } catch (e) {
+    check('시나리오 도중 오류', false, e.stack || e.message);
+  }
+  check('콘솔 오류 없음', errors.length === 0, errors.join(' / '));
+  toast = realToast;
+  noSave = true;   // 페이지를 떠날 때 확인용 저장본이 다시 생기지 않게
+
+  const print = fnv(JSON.stringify({ s: summary(), toasts, frames, t }));
+  if (EXPECT) check('지문이 기준과 같음', print === EXPECT, `${print} (기준 ${EXPECT})`);
+  const fail = out.filter((r) => !r.ok).length;
+  draw();
+
+  const lines = out.map((r) => `${r.ok ? 'O' : 'X'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`);
+  lines.unshift(fail ? `실패 ${fail} / ${out.length}` : `전부 통과 ${out.length}`, `지문 ${print}${EXPECT ? '' : ' (기준 없음)'}`, '');
+  const box = document.createElement('pre');
+  box.id = 'check';
+  box.style.cssText = 'position:fixed;inset:0;margin:0;padding:10px;overflow:auto;background:rgba(29,26,36,.9);color:#fbfaf5;font:12px/1.6 monospace;white-space:pre-wrap;z-index:9';
+  box.textContent = lines.join('\n');
+  document.body.appendChild(box);
+  window.checkResult = { pass: out.length - fail, fail, print, list: out };
+})();
