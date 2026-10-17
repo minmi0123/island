@@ -43,8 +43,16 @@ const FISH_BITE = 50;                          // 찌가 들어가 있는 시간
 
 // 잠
 const SLEEP_COOL = 60 * 90;                    // 한 번 자고 나면 이만큼은 다시 못 잔다
-const SLEEP_HUNGER = 15;                       // 자고 일어나면 배가 이만큼 꺼져 있다
+const SLEEP_HUNGER = 15;                       // 집에서 자고 일어나면 배가 이만큼 꺼져 있다
+const SLEEP_HUNGER_OUT = 25;                   // 모닥불 옆(바깥)에서 자면
 const NIGHT_EGG_LIMIT = 12;                    // 밤사이 낳는 알은 땅에 이만큼까지
+
+// 뗏목 · 엔딩
+const RAFT_DAY = 3;                            // 이 날부터 뗏목을 만들 수 있다
+const RAFT_LOGS = 20;                          // 뗏목 하나에 드는 통나무
+const RAFT_FEED = 15;                          // 뗏목 옆에 서 있으면 이 간격으로 통나무를 하나씩 엮는다
+const RAFT_FOOD = 3;                           // 떠날 때 챙겨야 하는 구운 음식
+const SAIL_TIME = 60 * 4;                      // 떠나는 장면 길이
 
 // 일기
 const DIARY_LINES = 3;                         // 하루 일기 본문 줄 수 (맺음말 빼고)

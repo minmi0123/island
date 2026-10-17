@@ -46,6 +46,16 @@
   #book.on { display: flex; }
   #book .paper { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #book .paper { background-image: none; }
+  #choice, #ending { position: absolute; inset: 0; background: #1d1a2ecc; display: none; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
+  #choice.on, #ending.on { display: flex; }
+  #choice .paper { width: 100%; text-align: center; }
+  #choice button { min-width: 150px; }
+  #choice button small { display: block; font-size: 11px; font-weight: 700; opacity: .7; }
+  #go:disabled { opacity: .5; cursor: default; }
+  #ending .paper { width: 100%; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; background-image: none; padding: 8px; }
+  #ending-card { display: block; width: 100%; min-height: 0; flex: 0 1 auto; object-fit: contain; }
+  #ending .row { display: flex; gap: 8px; }
+  #ending .row button { margin: 10px 0 0; }
   #book-list { flex: 1; overflow-y: auto; min-height: 0; background: repeating-linear-gradient(transparent 0 23px, #ead9b8 23px 24px); background-attachment: local; }   /* 줄이 글과 같이 스크롤된다 */
   #toast { position: absolute; left: 50%; top: 56px; transform: translateX(-50%); padding: 8px 14px; font-size: 14px; white-space: nowrap; opacity: 0; transition: opacity .4s; pointer-events: none; }
   #toast.show { opacity: 1; }
@@ -70,7 +80,9 @@
     <button id="build" class="panel">모닥불<small>통나무 3</small></button>
     <button id="coop" class="panel">닭장<small>통나무 5</small></button>
     <button id="house" class="panel">집<small>통나무 8</small></button>
-    <button id="sleep" class="panel">자기<small>밤 넘기기</small></button>
+    <button id="sleep" class="panel">자기<small id="sleep-where">밤 넘기기</small></button>
+    <button id="raft" class="panel">뗏목<small>터 잡기</small></button>
+    <button id="leave" class="panel">떠날까?<small>뗏목</small></button>
     <button id="eat" class="panel">먹기<small id="eat-what">구운 달걀</small></button>
   </div>
   <div id="night">
@@ -78,6 +90,20 @@
   </div>
   <div id="book">
     <div class="paper"><h2>섬 일기</h2><div id="book-list"></div><button id="book-close" class="panel">닫기</button></div>
+  </div>
+  <div id="choice">
+    <div class="paper">
+      <h2>뗏목이 다 됐다</h2><p id="choice-text"></p>
+      <button id="go" class="panel">떠나기<small id="go-need"></small></button>
+      <button id="stay" class="panel">섬에 남기</button>
+      <button id="later" class="panel">아직</button>
+    </div>
+  </div>
+  <div id="ending">
+    <div class="paper">
+      <img id="ending-card" alt="엔딩 카드">
+      <div class="row"><button id="ending-save" class="panel">이미지 저장</button><button id="ending-next" class="panel"></button></div>
+    </div>
   </div>
   <div id="toast" class="panel"></div>
 </div>
@@ -92,6 +118,8 @@
 <script src="js/fishing.js"></script>
 <script src="js/night.js"></script>
 <script src="js/diary.js"></script>
+<script src="js/raft.js"></script>
+<script src="js/ending.js"></script>
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/save.js"></script>

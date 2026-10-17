@@ -4,6 +4,7 @@
 if (!CHECK && loadGame()) {
   hints.length = 0;   // 이어 하는 사람에게는 조작 안내를 다시 띄우지 않는다
   toast('이어서 할게요', 120);
+  if (ended === 'leave') showEnding('leave');   // 이미 떠난 섬: 엔딩 카드부터
 }
 refreshHud();
 refreshDay();

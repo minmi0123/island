@@ -1,5 +1,5 @@
 // 확인 시나리오 — index.html?check 로 열면 저절로 돌고 결과를 화면에 띄운다 (window.checkResult 에도 남김)
-// 순서: 나무 베기 → 모닥불 → 닭 알 → 굽기·먹기 → 닭장 → 낚시 → 생선 굽기·먹기 → 집·잠·일기 → 나무만 벤 날 → 낚시만 한 날 → 일기장 → 저장·불러오기
+// 순서: 나무 베기 → 모닥불 → 닭 알 → 굽기·먹기 → 닭장 → 낚시 → 생선 굽기·먹기 → 집·잠·일기 → 나무만 벤 날 → 낚시만 한 날 → 일기장 → 모닥불 옆 잠 → 뗏목 → 남기 · 떠나기 엔딩 → 저장·불러오기
 // 루프 없이 tick() 을 직접 부르고 섬·난수가 시드로 고정이라, 동작이 같으면 마지막 "지문" 도 같다.
 //   리팩토링(동작을 안 바꾸는 정리) 전후: 지문이 EXPECT 와 같아야 한다.
 //   기능을 바꾼 뒤: 지문이 달라지는 게 맞다. 항목이 전부 통과하면 새 지문을 EXPECT 에 적는다.
@@ -7,7 +7,7 @@
 // 위치를 옮길 때는 걷지 않고 바로 세운다(standAt). 길 찾기가 아니라 섬의 규칙을 확인하는 스크립트라서.
 'use strict';
 (async () => {
-  const EXPECT = 'd47a3e65';   // 마지막으로 통과한 지문 (2026-10-18, 섬 일기)
+  const EXPECT = '231b5d19';   // 마지막으로 통과한 지문 (2026-10-18, 뗏목 · 엔딩)
 
   const out = [];
   const toasts = [];
@@ -114,6 +114,8 @@
       diary: diary.map((e) => [e.day, ...e.lines]),
       today: Object.values(today).map(Math.round),
       ever: Object.values(ever).map(Math.round),
+      raft: raft && [Math.round(raft.x), Math.round(raft.y), raft.logs],
+      ended,
     };
   }
   function fnv(s) {
@@ -220,12 +222,77 @@
     document.getElementById('book-close').click();
     check('일기장 닫기', !bookOpen && !document.getElementById('book').classList.contains('on'));
 
+    // 10. 모닥불 옆에서 자기: 집보다 배가 더 고프다
+    atFire();
+    run(sleepCool + 1);
+    atFire();
+    run(1);
+    check('모닥불 옆 자기 버튼', document.getElementById('sleep').style.display === 'flex'
+      && document.getElementById('sleep-where').textContent === '모닥불 옆에서');
+    const fireNight = { day, full: player.full };
+    goToSleep();
+    await wait(1000);
+    document.getElementById('wake').click();
+    await wait(1400);
+    check('모닥불 옆에서 잠', day === fireNight.day + 1 && Math.abs(player.full - Math.max(0, fireNight.full - SLEEP_HUNGER_OUT)) < 1e-9
+      && diary[diary.length - 1].lines.some((l) => l.includes('잤다')), diary[diary.length - 1].lines.join(' / '));
+
+    // 11. 뗏목: 물가에 터를 잡고 통나무를 엮는다
+    let shore = false;
+    for (let j = 0; j < MAP_H && !shore; j++) for (let i = 0; i < MAP_W && !shore; i++) {
+      if (tiles[j][i] === 0) continue;
+      for (let y = j * TILE + 4; y < j * TILE + TILE && !shore; y += 4) for (let x = i * TILE + 2; x < i * TILE + TILE && !shore; x += 4) {
+        if (!standAt(x, y)) continue;
+        player.dir = 1;
+        shore = !nearestTree() && !!raftSpot();
+      }
+    }
+    run(10);
+    check('뗏목 버튼', shore && document.getElementById('raft').style.display === 'flex', `자리 ${Math.round(player.x)},${Math.round(player.y)}`);
+    document.getElementById('raft').click();
+    check('뗏목 터', !!raft && raft.logs === 0);
+    inv.log = RAFT_LOGS;
+    refreshHud();
+    const woven = run(RAFT_FEED * (RAFT_LOGS + 2), () => raftDone());
+    run(10);
+    check('뗏목 엮기', woven && inv.log === 0 && document.getElementById('leave').style.display === 'flex', `통나무 ${raft.logs}/${RAFT_LOGS}`);
+
+    // 음식이 모자라면 못 떠난다
+    inv.fried = 0; inv.grilled = 1;
+    refreshHud();
+    document.getElementById('leave').click();
+    check('먹을 게 모자라면 못 떠남', choiceOpen && document.getElementById('go').disabled, document.getElementById('go-need').textContent);
+
+    // 남기 엔딩 → 계속 지내기
+    document.getElementById('stay').click();
+    check('남기 엔딩', ended === 'stay' && endingOpen && document.getElementById('ending-card').src.startsWith('data:image/png')
+      && diary[diary.length - 1].end === 'stay', lastCard && `${lastCard.head} · ${lastCard.title} · ${lastCard.quote}`);
+    document.getElementById('ending-next').click();
+    const cool1 = sleepCool;
+    run(5);
+    check('남은 뒤 계속 지내기', !endingOpen && sleepCool < cool1);   // 게임이 다시 돈다
+
+    // 떠나기 엔딩
+    inv.fried = 3;
+    refreshHud();
+    document.getElementById('leave').click();
+    check('떠날 준비', choiceOpen && !document.getElementById('go').disabled && document.getElementById('stay').style.display === 'none');
+    document.getElementById('go').click();
+    check('음식 챙김', foodCount() === 4 - RAFT_FOOD && !!sail, `구운 생선 ${inv.grilled} · 구운 달걀 ${inv.fried}`);
+    const shoreAt = { x: player.x, y: player.y };
+    run(SAIL_TIME);
+    check('뗏목 타고 나감', Math.hypot(player.x - shoreAt.x, player.y - shoreAt.y) > 60 && player.x === raft.x);
+    await wait(1100);
+    check('떠나기 엔딩', ended === 'leave' && !sail && endingOpen && diary[diary.length - 1].end === 'leave'
+      && document.getElementById('ending-next').textContent === '처음부터 다시', lastCard && `${lastCard.head} · ${lastCard.title} · ${lastCard.quote}`);
+    window.checkCard = document.getElementById('ending-card').src;   // 캡처용
+
     // 9. 저장 · 불러오기
     const saved = JSON.stringify(summary());
     check('저장', saveGame() === true);
     inv.log = 999; house = null; day = 1;
-    fires.length = 0; coops.length = 0; chickens.length = 0; items.length = 0; diary.length = 0;
-    check('불러오기', loadGame() === true && JSON.stringify(summary()) === saved, `집 ${!!house} · ${day}일째 · 닭 ${chickens.length} · 일기 ${diary.length}`);
+    fires.length = 0; coops.length = 0; chickens.length = 0; items.length = 0; diary.length = 0; raft = null; ended = null;
+    check('불러오기', loadGame() === true && JSON.stringify(summary()) === saved, `집 ${!!house} · ${day}일째 · 닭 ${chickens.length} · 일기 ${diary.length} · 엔딩 ${ended}`);
     localStorage.setItem(SAVE_KEY, '{broken');
     let broken;
     try { broken = loadGame(); } catch (e) { broken = 'throw: ' + e.message; }
@@ -249,7 +316,8 @@
   box.id = 'check';
   box.style.cssText = 'position:fixed;inset:0;margin:0;padding:10px;overflow:auto;background:rgba(29,26,36,.9);color:#fbfaf5;font:12px/1.6 monospace;white-space:pre-wrap;z-index:9';
   lines.push('', '— 일기 —');
-  diary.forEach((e) => lines.push(`[${e.day}일째] ${e.lines.join(' ')}`));
+  diary.forEach((e) => lines.push(`[${e.day}일째${e.end ? ' · ' + e.end : ''}] ${e.lines.join(' ')}`));
+  if (lastCard) lines.push('', `— 엔딩 카드 — ${lastCard.head} / 칭호 ${lastCard.title} / ${lastCard.quote}`);
   box.textContent = lines.join('\n');
   document.body.appendChild(box);
   window.checkResult = { pass: out.length - fail, fail, print, list: out };

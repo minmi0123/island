@@ -6,8 +6,16 @@ function atDoor() {
   return !!house && Math.abs(player.x - house.x) < 9 && player.y > house.y && player.y < house.y + 14;
 }
 
+// 잘 수 있는 자리: 집 문 앞 > 모닥불 옆. 없으면 null
+function sleepSpot() {
+  if (atDoor()) return 'house';
+  if (fires.some((f) => Math.abs(player.x - f.x) < COOK_REACH && Math.abs(player.y - f.y) < COOK_REACH - 6)) return 'fire';
+  return null;
+}
+
 // 밤이 지나는 동안 일어나는 일. 그날 일기를 돌려준다
-function passNight() {
+function passNight(where) {
+  if (where === 'fire') note('outside');
   const entry = writeDiary();   // 하루가 넘어가기 전에 오늘 일로 쓴다
   day++;
   trees.forEach((tr) => { if (tr.state === 'stump') { tr.state = 'tree'; tr.hp = tr.maxHp; } });
@@ -22,9 +30,11 @@ function passNight() {
     if (chickens.length < CHICKEN_COUNT + coops.length * COOP_ROOM) spawnChick(c);
     c.timer = COOP_SPAWN;
   });
-  player.full = Math.max(0, player.full - SLEEP_HUNGER);
-  player.x = house.x;
-  player.y = house.y + 8;
+  player.full = Math.max(0, player.full - (where === 'house' ? SLEEP_HUNGER : SLEEP_HUNGER_OUT));
+  if (where === 'house') {
+    player.x = house.x;
+    player.y = house.y + 8;
+  }
   player.fish = null;
   player.still = 0;
   sleepCool = SLEEP_COOL;
@@ -36,7 +46,8 @@ function passNight() {
 
 let sleeping = false;
 function goToSleep() {
-  if (sleeping || !atDoor()) return;
+  const where = sleepSpot();
+  if (sleeping || !where) return;
   if (sleepCool > 0) { toast('아직 졸리지 않아요. 조금 더 놀다 자요'); return; }
   sleeping = true;
   toastTimer = 0;
@@ -44,7 +55,7 @@ function goToSleep() {
   document.getElementById('sleep').style.display = 'none';
   document.getElementById('night').classList.add('on');
   setTimeout(() => {
-    const entry = passNight();
+    const entry = passNight(where);
     cam.x = Math.max(0, Math.min(MAP_W * TILE - W, player.x - W / 2));
     cam.y = Math.max(0, Math.min(MAP_H * TILE - H, player.y - H / 2));
     showPage(entry, () => {   // 일기를 다 읽고 "아침으로"

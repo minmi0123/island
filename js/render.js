@@ -210,10 +210,42 @@ function drawCoop(c) {
   ctx.drawImage(SPR.egg, x - 3, y - 22);                    // 간판
 }
 
+// 뗏목 24x12 (+돛): 엮은 통나무만큼 세로 통나무가 늘어난다. 터만 잡았을 땐 물 위에 점선
+function drawRaft(rf) {
+  const x = Math.round(rf.x), y = Math.round(rf.y) + (Math.floor(t / 30) % 2);   // 둥실
+  const n = Math.ceil(6 * rf.logs / RAFT_LOGS);
+  if (n === 0) {
+    for (let k = 0; k < 26; k += 4) { rect(x - 13 + k, y - 6, 2, 1, C.foam); rect(x - 13 + k, y + 5, 2, 1, C.foam); }
+    for (let k = 0; k < 12; k += 4) { rect(x - 13, y - 6 + k, 1, 2, C.foam); rect(x + 12, y - 6 + k, 1, 2, C.foam); }
+  }
+  rect(x - 14, y + 6, 28, 1, C.foam);                         // 물결
+  for (let k = 0; k < n; k++) {
+    const lx = x - 12 + k * 4;                                // 6개 = 24px
+    rect(lx, y - 6, 4, 12, PALETTE.o);
+    rect(lx + 1, y - 5, 2, 10, PALETTE.t);
+    rect(lx + 2, y - 5, 1, 10, PALETTE.T);
+    rect(lx + 1, y - 5, 2, 1, PALETTE.c);                      // 자른 면
+  }
+  if (n >= 3) { rect(x - 12, y - 3, n * 4, 1, '#e8d3a0'); rect(x - 12, y + 2, n * 4, 1, '#e8d3a0'); }   // 밧줄
+  if (rf.logs >= RAFT_LOGS) {                                  // 돛대 + 돛
+    rect(x + 4, y - 26, 3, 22, PALETTE.o);
+    rect(x + 5, y - 25, 1, 21, C.handle);
+    const flap = Math.floor(t / 20) % 2;
+    rect(x - 7, y - 24, 12 + flap, 13, PALETTE.o);
+    rect(x - 6, y - 23, 10 + flap, 11, '#fbfaf5');
+    rect(x - 6, y - 19, 10 + flap, 2, '#e8434a');
+  } else if (nearRaft()) {                                     // 엮은 만큼 막대
+    rect(x - 11, y - 13, 22, 4, PALETTE.o);
+    rect(x - 10, y - 12, 20, 2, '#5a4a6a');
+    rect(x - 10, y - 12, Math.round(20 * rf.logs / RAFT_LOGS), 2, '#f5b93a');
+  }
+}
+
 function draw() {
   const sx = cam.shake ? Math.round(rand() * 2 - 1) : 0;
   const cx = Math.round(cam.x) + sx, cy = Math.round(cam.y);
   ctx.save();
+  rect(0, 0, W, H, C.water);   // 지도 밖도 바다
   ctx.drawImage(mapCanvas, cx, cy, W, H, 0, 0, W, H);
   ctx.translate(-cx, -cy);
 
@@ -230,6 +262,7 @@ function draw() {
   fires.forEach((f) => list.push({ y: f.y, f: () => drawFire(f) }));
   coops.forEach((c) => list.push({ y: c.y, f: () => drawCoop(c) }));
   if (house) list.push({ y: house.y, f: () => drawHouse(house) });
+  if (raft) list.push({ y: raft.y - 10, f: () => drawRaft(raft) });   // 위에 선 주인공보다 먼저
   items.forEach((it) => list.push({ y: it.y, f: () => drawItem(it) }));
   chickens.forEach((ch) => list.push({ y: ch.y, f: () => drawChicken(ch) }));
   list.push({ y: player.y + 0.5, f: drawPlayer });

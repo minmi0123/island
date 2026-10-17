@@ -80,11 +80,12 @@ function updateFire(f) {
   burst(f.x, f.y - 14, ['#ffe066', '#ffffff'], 6, 0.8);
 }
 
-let lastAtDoor = null;
+let lastSleepSpot = null;
 function update() {
-  if (sleeping || bookOpen) return;
+  if (sleeping || bookOpen || choiceOpen || endingOpen) return;
   hints.forEach(([at, msg]) => { if (t === at) toast(msg, 220); });
   if (toastTimer > 0 && --toastTimer === 0) document.getElementById('toast').classList.remove('show');
+  if (sail) { updateSail(); followCam(); return; }   // 떠나는 중에는 뗏목만 움직인다
 
   const { vx, vy } = readInput();
   player.moving = !!(vx || vy);
@@ -157,23 +158,31 @@ function update() {
   fires.forEach(updateFire);
   coops.forEach(updateCoop);
   if (sleepCool > 0) sleepCool--;
-  const door = atDoor();
-  if (door !== lastAtDoor) {
-    lastAtDoor = door;
-    document.getElementById('sleep').style.display = door ? 'flex' : 'none';
-    if (door) sayOnce('door', '집 앞에서 자면 밤이 지나가요');
+  const spot = sleepSpot();
+  if (spot !== lastSleepSpot) {
+    lastSleepSpot = spot;
+    document.getElementById('sleep').style.display = spot ? 'flex' : 'none';
+    document.getElementById('sleep-where').textContent = spot === 'fire' ? '모닥불 옆에서' : '밤 넘기기';
+    if (spot === 'house') sayOnce('door', '집 앞에서 자면 밤이 지나가요');
+    if (spot === 'fire') sayOnce('fireSleep', '모닥불 옆에서도 잘 수 있어요. 집보다 배가 더 고파요');
   }
+  updateRaft();
   if (house && t % 25 === 0) parts.push({ x: house.x + 9 + Math.round(rand() * 2), y: house.y - 35, vx: 0.1 + rand() * 0.15, vy: -0.25, g: 0, life: 70, age: 0, color: '#d8d8e4', w: 2 });   // 굴뚝 연기
   updateHunger();
 
   parts.forEach((p) => { p.age++; p.x += p.vx; p.y += p.vy; p.vy += p.g; });
   for (let k = parts.length - 1; k >= 0; k--) if (parts[k].age >= parts[k].life) parts.splice(k, 1);
 
-  // 카메라는 주인공을 천천히 따라간다
-  const tx = Math.max(0, Math.min(MAP_W * TILE - W, player.x - W / 2));
-  const ty = Math.max(0, Math.min(MAP_H * TILE - H, player.y - H / 2));
+  followCam();
+  if (t > 0 && t % SAVE_EVERY === 0) saveGame();
+}
+
+// 카메라는 주인공을 천천히 따라간다
+function followCam() {
+  const clamp = (v, max) => (sail ? v : Math.max(0, Math.min(max, v)));   // 떠날 때는 지도 밖 바다까지 따라간다
+  const tx = clamp(player.x - W / 2, MAP_W * TILE - W);
+  const ty = clamp(player.y - H / 2, MAP_H * TILE - H);
   cam.x += (tx - cam.x) * 0.15;
   cam.y += (ty - cam.y) * 0.15;
   if (cam.shake > 0) cam.shake--;
-  if (t > 0 && t % SAVE_EVERY === 0) saveGame();
 }

@@ -41,7 +41,7 @@ document.getElementById('house').addEventListener('click', () => {
   note('house');
   cam.shake = 6;
   burst(x, y - 12, ['#d9a066', '#5f7fb8', '#ffffff'], 18, 1.6);
-  lastAtDoor = null;
+  lastSleepSpot = null;
   refreshHud();
   toast('집 완성! 문 앞에 서면 잘 수 있어요');
 });

@@ -11,7 +11,7 @@ addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 let joy = null;
 let scale = 1;
 wrap.addEventListener('pointerdown', (e) => {
-  if (e.target.closest('button, #book')) return;
+  if (e.target.closest('button, #book, #choice, #ending')) return;
   if (reel()) return;   // 낚시 중이면 톡 = 당기기
   joy = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY };
 });

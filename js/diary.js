@@ -4,7 +4,7 @@
 
 const freshDay = () => ({
   chop: 0, log: 0, egg: 0, fish: 0, miss: 0, early: 0, scared: 0, ateEgg: 0, ateFish: 0, cooked: 0,
-  hungry: 0, starve: 0, walk: 0, fire: 0, coop: 0, house: 0, chick: 0, grown: 0,   // hungry · starve 는 프레임, walk 는 px
+  hungry: 0, starve: 0, walk: 0, fire: 0, coop: 0, house: 0, chick: 0, grown: 0, outside: 0, raft: 0,   // hungry · starve 는 프레임, walk 는 px
 });
 let today = freshDay();
 const ever = freshDay();   // 지금까지 합계. 처음 해 본 일을 알아보려고
@@ -48,6 +48,10 @@ function diaryCandidates(d, firstDay) {
   if (d.ateEgg >= 3) add('food', 35, d.ateEgg, '구운 달걀을 {n}개 먹었다. 이제 달걀 맛을 가린다.');
   else if (d.ateEgg) add('food', 25, d.ateEgg, '구운 달걀을 먹었다. 소금이 있으면 좋겠다.');
   if (d.cooked >= 3) add('cook', 25, d.cooked, '모닥불 앞에서 {n}번 요리했다. 요리에 소질이 있는 것 같다.');
+
+  if (d.outside) add('night', 70, 0, ...(house ? ['집을 두고 모닥불 옆에서 잤다. 나도 이유를 모르겠다.']
+    : ['모닥불 옆에서 웅크리고 잤다. 등이 시리다.', '별을 이불 삼아 잤다. 이불이 얇다.']));
+  if (d.raft) add('build', 100, 1, '뗏목을 다 엮었다. 바다가 갑자기 가까워 보인다.');
 
   if (d.walk > 4000) add('walk', 30, 0, '섬을 몇 바퀴는 걸은 것 같다. 다리가 뻐근하다.');
   else if (d.walk < 300) add('walk', 30, 0, '거의 움직이지 않았다. 바다만 봤다.', '하루 종일 한자리에 있었다. 섬이 나를 구경했다.');
@@ -118,7 +122,7 @@ function openBook() {
   list.innerHTML = '';
   diary.forEach((e) => {
     const h = document.createElement('h3');
-    h.textContent = e.day + '일째';
+    h.textContent = e.day + '일째' + (e.end === 'leave' ? ' · 떠나는 날' : e.end === 'stay' ? ' · 남기로 한 날' : '');
     list.appendChild(h);
     e.lines.forEach((s) => {
       const p = document.createElement('p');

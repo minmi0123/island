@@ -25,7 +25,7 @@ function updateFishing() {
     return;
   }
   if (!f) {
-    if (++player.still < FISH_STILL || nearestTree()) return;
+    if (++player.still < FISH_STILL || nearestTree() || nearRaft()) return;   // 뗏목 옆에선 엮기만 한다
     const spot = fishingSpot();
     if (!spot) return;
     player.fish = { state: 'cast', timer: 20, ...spot };

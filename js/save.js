@@ -10,7 +10,7 @@ const ITEM_KINDS = ['log', 'egg', 'fried', 'fish', 'grilled'];
 let noSave = false;   // 처음부터 누른 뒤 페이지를 떠날 때 다시 저장되지 않게
 
 function saveGame() {
-  if (noSave) return false;
+  if (noSave || sail) return false;   // 떠나는 장면 도중엔 저장하지 않는다
   const data = {
     v: SAVE_VER,
     at: Date.now(),
@@ -29,6 +29,8 @@ function saveGame() {
     today: Object.fromEntries(Object.entries(today).map(([k, v]) => [k, Math.round(v)])),
     ever: Object.fromEntries(Object.entries(ever).map(([k, v]) => [k, Math.round(v)])),
     firstEgg,
+    raft: raft && { x: Math.round(raft.x), y: Math.round(raft.y), logs: raft.logs },
+    ended,
   };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; } catch (e) { return false; }
 }
@@ -77,13 +79,19 @@ function loadGame() {
   diary.length = 0;
   arr(d.diary).forEach((e) => {
     const lines = arr(e?.lines).filter((s) => typeof s === 'string');
-    if (lines.length) diary.push({ day: Math.max(1, Math.floor(num(e.day, 1))), lines });
+    if (!lines.length) return;
+    const entry = { day: Math.max(1, Math.floor(num(e.day, 1))), lines };
+    if (e.end === 'leave' || e.end === 'stay') entry.end = e.end;
+    diary.push(entry);
   });
   Object.keys(today).forEach((k) => { today[k] = Math.max(0, num(d.today?.[k], 0)); });
   Object.keys(ever).forEach((k) => { ever[k] = Math.max(0, num(d.ever?.[k], 0)); });
   house = d.house && typeof d.house.x === 'number' && typeof d.house.y === 'number' ? { x: d.house.x, y: d.house.y } : null;
   day = Math.max(1, Math.floor(num(d.day, 1)));
   sleepCool = Math.max(0, num(d.sleepCool, 0));
+  raft = d.raft && typeof d.raft.x === 'number' && typeof d.raft.y === 'number'
+    ? { x: d.raft.x, y: d.raft.y, logs: Math.max(0, Math.min(RAFT_LOGS, Math.floor(num(d.raft.logs, 0)))) } : null;
+  ended = d.ended === 'stay' || d.ended === 'leave' ? d.ended : null;
   return true;
 }
 
