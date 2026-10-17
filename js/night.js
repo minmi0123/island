@@ -61,7 +61,7 @@ function goToSleep() {
     showPage(entry, () => {   // 일기를 다 읽고 "아침으로"
       setTimeout(() => {
         document.getElementById('night').classList.remove('on');
-        toast(day + '일째 아침이 밝았어요');
+        toast(day + '일째 아침이 밝았어요' + (day === 2 && day < RAFT_DAY ? '. 바다 건너엔 뭐가 있을까?' : ''));
         setTimeout(() => { sleeping = false; }, 800);
       }, 500);
     });

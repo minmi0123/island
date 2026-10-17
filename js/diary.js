@@ -31,7 +31,8 @@ function diaryCandidates(d, firstDay) {
   if (d.fish && d.miss) add('miss', 30, d.miss, '놓친 물고기도 {n}마리. 그 녀석들 얘기는 하지 않겠다.');
   if (d.early >= 2) add('miss', 45, d.early, '찌가 꿈쩍도 안 했는데 {n}번이나 잡아챘다. 마음만 급했다.');
 
-  if (d.chop >= 5) add('chop', 60 + d.chop, d.chop, '나무를 {n}그루나 베었다. 섬이 조금 휑해졌다. 미안하다, 나무야.');
+  if (d.chop >= 5) add('chop', 60 + d.chop, d.chop, '나무를 {n}그루나 베었다. 섬이 조금 휑해졌다. 미안하다, 나무야.',
+    '나무 {n}그루. 이제 도끼가 내 팔 같다.', '오늘 쓰러뜨린 나무 {n}그루. 나무들이 나를 보고 수군거린다.');
   else if (d.chop) add('chop', 40 + d.chop * 4, d.chop, '나무를 {n}그루 베었다. 손바닥이 얼얼하다.', '나무 {n}그루. 도끼질이 조금 늘었다.', '나무 {n}그루를 쓰러뜨렸다. 쓰러질 때마다 미안하다고 했다.');
   else add('chop', 15, 0, '나무는 한 그루도 베지 않았다. 나무도 쉬는 날이 있어야지.');
 
@@ -86,7 +87,7 @@ function writeDiary() {
     .filter((cand) => !groups.has(cand.group) && groups.add(cand.group))
     .slice(0, DIARY_LINES)
     .map((cand) => pick(cand.variants).replace('{n}', countWord(cand.n)));
-  const endings = day >= 3 ? [...DIARY_ENDINGS, '나무를 엮으면 배가 될지도 모른다.'] : DIARY_ENDINGS;
+  const endings = day >= RAFT_DAY - 1 ? [...DIARY_ENDINGS, '나무를 엮으면 배가 될지도 모른다.'] : DIARY_ENDINGS;
   lines.push(day === 1 ? '첫날치고는 나쁘지 않았다.' : pick(endings));
 
   const entry = { day, lines };

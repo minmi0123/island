@@ -22,7 +22,7 @@ const HOUSE_COST = 8;
 // 닭 · 닭장
 const CHICKEN_COUNT = 5;
 const CHICKEN_SPEED = 0.35, CHICKEN_FLEE = 1.0;
-const EGG_MIN = 60 * 12, EGG_MAX = 60 * 25;   // 알 낳는 간격
+const EGG_MIN = 60 * 20, EGG_MAX = 60 * 40;   // 알 낳는 간격
 const EGG_LIMIT = 6;                           // 땅에 깔린 알이 이만큼이면 더 안 낳는다
 const COOP_SPAWN = 60 * 30;                    // 닭장 하나가 병아리를 내보내는 간격
 const COOP_ROOM = 4;                           // 닭장 하나당 늘어나는 닭 수
@@ -42,16 +42,16 @@ const FISH_WAIT_MIN = 60 * 2, FISH_WAIT_MAX = 60 * 5;
 const FISH_BITE = 50;                          // 찌가 들어가 있는 시간. 이 안에 눌러야 잡힌다
 
 // 잠
-const SLEEP_COOL = 60 * 90;                    // 한 번 자고 나면 이만큼은 다시 못 잔다
+const SLEEP_COOL = 60 * 60;                    // 한 번 자고 나면 이만큼은 다시 못 잔다
 const SLEEP_HUNGER = 15;                       // 집에서 자고 일어나면 배가 이만큼 꺼져 있다
 const SLEEP_HUNGER_OUT = 25;                   // 모닥불 옆(바깥)에서 자면
-const NIGHT_EGG_LIMIT = 12;                    // 밤사이 낳는 알은 땅에 이만큼까지
+const NIGHT_EGG_LIMIT = 8;                     // 밤사이 낳는 알은 땅에 이만큼까지
 
 // 뗏목 · 엔딩
-const RAFT_DAY = 3;                            // 이 날부터 뗏목을 만들 수 있다
-const RAFT_LOGS = 20;                          // 뗏목 하나에 드는 통나무
+const RAFT_DAY = 4;                            // 이 날부터 뗏목을 만들 수 있다
+const RAFT_LOGS = 30;                          // 뗏목 하나에 드는 통나무
 const RAFT_FEED = 15;                          // 뗏목 옆에 서 있으면 이 간격으로 통나무를 하나씩 엮는다
-const RAFT_FOOD = 3;                           // 떠날 때 챙겨야 하는 구운 음식
+const RAFT_FISH = 2;                           // 떠날 때 챙겨야 하는 구운 생선 (뗏목 터를 잡으면 먹기는 달걀부터)
 const SAIL_TIME = 60 * 4;                      // 떠나는 장면 길이
 
 // 일기

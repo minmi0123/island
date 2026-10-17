@@ -18,12 +18,18 @@ function refreshHud() {
   ['egg', 'fried', 'fish', 'grilled'].forEach((k) => {   // 0 개인 칸은 숨긴다
     document.getElementById('slot-' + k).style.display = inv[k] > 0 ? 'flex' : 'none';
   });
-  document.getElementById('eat-what').textContent = inv.grilled > 0 ? '구운 생선' : '구운 달걀';
+  document.getElementById('eat-what').textContent = eatWhat() === 'grilled' ? '구운 생선' : '구운 달걀';
   document.getElementById('build').style.display = inv.log >= FIRE_COST ? 'flex' : 'none';
   document.getElementById('coop').style.display = inv.log >= COOP_COST ? 'flex' : 'none';
   document.getElementById('house').style.display = inv.log >= HOUSE_COST && !house ? 'flex' : 'none';
   document.getElementById('eat').style.display = inv.fried + inv.grilled > 0 ? 'flex' : 'none';
   document.getElementById('book-open').style.display = diary.length ? 'block' : 'none';
+}
+// 먹기 버튼이 먹는 것: 생선이 먼저. 뗏목 터를 잡은 뒤엔 생선은 바다에서 먹게 달걀부터
+function eatWhat() {
+  if (inv.fried + inv.grilled === 0) return null;
+  if (raft) return inv.fried > 0 ? 'fried' : 'grilled';
+  return inv.grilled > 0 ? 'grilled' : 'fried';
 }
 function bumpHud(kind) {
   const el = document.getElementById('slot-' + kind);
@@ -78,7 +84,7 @@ document.getElementById('build').addEventListener('click', () => {
 });
 
 document.getElementById('eat').addEventListener('click', () => {
-  const food = inv.grilled > 0 ? 'grilled' : inv.fried > 0 ? 'fried' : null;
+  const food = eatWhat();
   if (!food) return;
   inv[food]--;
   note(food === 'grilled' ? 'ateFish' : 'ateEgg');

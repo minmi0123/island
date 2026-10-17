@@ -7,7 +7,7 @@
 // 위치를 옮길 때는 걷지 않고 바로 세운다(standAt). 길 찾기가 아니라 섬의 규칙을 확인하는 스크립트라서.
 'use strict';
 (async () => {
-  const EXPECT = '231b5d19';   // 마지막으로 통과한 지문 (2026-10-18, 뗏목 · 엔딩)
+  const EXPECT = '0e2230ad';   // 마지막으로 통과한 지문 (2026-10-18, 한 판 해 보고 숫자 조정 · 떠날 때 생선)
 
   const out = [];
   const toasts = [];
@@ -92,7 +92,7 @@
   const atFire = () => standNear(fires[0].x, fires[0].y, [[12, 0], [-12, 0], [12, 4], [-12, 4], [0, 10], [0, -8]]);
 
   function eat() {
-    const food = inv.grilled > 0 ? 'grilled' : 'fried';
+    const food = eatWhat();
     const full0 = player.full;
     document.getElementById('eat').click();
     const want = Math.min(FULL_MAX, full0 + (food === 'grilled' ? FULL_PER_FISH : FULL_PER_EGG));
@@ -139,10 +139,11 @@
     check('모닥불', build('build') && fires.length === 1 && inv.log === 1, `모닥불 ${fires.length} · 통나무 ${inv.log}`);
 
     // 3. 닭 알: 기다렸다가 주우러 간다
-    const laid = run(60 * 30, () => eggsOnGround() > 0);
+    const laid = run(EGG_MAX + 60, () => eggsOnGround() > 0);
     const egg = items.find((it) => it.kind === 'egg');
-    const gotEgg = laid && standNear(egg.x, egg.y, [[0, 2], [6, 2], [-6, 2], [0, -4], [8, 0], [-8, 0]]) && run(200, () => inv.egg >= 1);
-    check('닭 알 줍기', gotEgg, `달걀 ${inv.egg} · ${frames} 프레임째`);
+    const stood = laid && standNear(egg.x, egg.y, [[0, 2], [6, 2], [-6, 2], [0, -4], [8, 0], [-8, 0]]);
+    const gotEgg = stood && run(200, () => today.egg >= 1);   // 모닥불 옆이면 줍자마자 구우러 들어가서 inv 로는 못 본다
+    check('닭 알 줍기', gotEgg, `주운 알 ${today.egg} · ${frames} 프레임째`);
 
     // 4. 굽기 · 먹기
     const fried = atFire() && run(600, () => inv.fried >= 1);
@@ -257,11 +258,12 @@
     run(10);
     check('뗏목 엮기', woven && inv.log === 0 && document.getElementById('leave').style.display === 'flex', `통나무 ${raft.logs}/${RAFT_LOGS}`);
 
-    // 음식이 모자라면 못 떠난다
-    inv.fried = 0; inv.grilled = 1;
+    // 구운 생선이 모자라면 못 떠난다 (달걀은 안 쳐 준다)
+    inv.fried = 5; inv.grilled = 1;
     refreshHud();
     document.getElementById('leave').click();
-    check('먹을 게 모자라면 못 떠남', choiceOpen && document.getElementById('go').disabled, document.getElementById('go-need').textContent);
+    check('뗏목 뒤 먹기는 달걀부터', eatWhat() === 'fried');
+    check('생선이 모자라면 못 떠남', choiceOpen && document.getElementById('go').disabled, document.getElementById('go-need').textContent);
 
     // 남기 엔딩 → 계속 지내기
     document.getElementById('stay').click();
@@ -273,12 +275,12 @@
     check('남은 뒤 계속 지내기', !endingOpen && sleepCool < cool1);   // 게임이 다시 돈다
 
     // 떠나기 엔딩
-    inv.fried = 3;
+    inv.grilled = RAFT_FISH + 1;
     refreshHud();
     document.getElementById('leave').click();
     check('떠날 준비', choiceOpen && !document.getElementById('go').disabled && document.getElementById('stay').style.display === 'none');
     document.getElementById('go').click();
-    check('음식 챙김', foodCount() === 4 - RAFT_FOOD && !!sail, `구운 생선 ${inv.grilled} · 구운 달걀 ${inv.fried}`);
+    check('생선 챙김', inv.grilled === 1 && inv.fried === 5 && !!sail, `구운 생선 ${inv.grilled} · 구운 달걀 ${inv.fried}`);
     const shoreAt = { x: player.x, y: player.y };
     run(SAIL_TIME);
     check('뗏목 타고 나감', Math.hypot(player.x - shoreAt.x, player.y - shoreAt.y) > 60 && player.x === raft.x);

@@ -9,7 +9,7 @@ let feedTimer = 0;
 
 const raftDone = () => !!raft && raft.logs >= RAFT_LOGS;
 const nearRaft = () => !!raft && Math.hypot(player.x - raft.x, player.y - raft.y) < 32;
-const foodCount = () => inv.fried + inv.grilled;
+const fishCount = () => inv.grilled;
 
 // 뗏목 놓을 물: 주인공 앞 · 뒤 · 아래 · 위. 뗏목 크기만큼 물이어야 한다
 function raftSpot() {
@@ -61,15 +61,15 @@ document.getElementById('raft').addEventListener('click', () => {
 // 떠날까? 고르는 쪽지
 function openChoice() {
   if (!raftDone() || ended === 'leave') return;
-  const ok = foodCount() >= RAFT_FOOD;
+  const ok = fishCount() >= RAFT_FISH;
   document.getElementById('choice-text').textContent = ended === 'stay'
     ? '남기로 했었지만… 다시 생각해 볼까?'
     : '바다 건너엔 뭐가 있을까. 섬을 떠날까?';
   const go = document.getElementById('go');
   go.disabled = !ok;
   document.getElementById('go-need').textContent = ok
-    ? `구운 음식 ${RAFT_FOOD}개를 챙긴다`
-    : `구운 음식 ${RAFT_FOOD}개가 필요해요 (지금 ${foodCount()})`;
+    ? `구운 생선 ${RAFT_FISH}마리를 챙긴다`
+    : `바다에서 먹을 구운 생선 ${RAFT_FISH}마리가 필요해요 (지금 ${fishCount()})`;
   document.getElementById('stay').style.display = ended === 'stay' ? 'none' : '';
   choiceOpen = true;
   joy = null;
@@ -89,9 +89,9 @@ document.getElementById('stay').addEventListener('click', () => {
   showEnding('stay');
 });
 document.getElementById('go').addEventListener('click', () => {
-  if (foodCount() < RAFT_FOOD) return;
+  if (fishCount() < RAFT_FISH) return;
   closeChoice();
-  for (let k = 0; k < RAFT_FOOD; k++) inv[inv.grilled > 0 ? 'grilled' : 'fried']--;   // 생선부터 챙긴다
+  inv.grilled -= RAFT_FISH;
   refreshHud();
   saveGame();   // 떠나기 직전 상태. 장면 도중엔 저장하지 않는다
   const dx = raft.x - player.x, dy = raft.y - player.y, l = Math.hypot(dx, dy) || 1;
