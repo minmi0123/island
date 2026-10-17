@@ -30,6 +30,7 @@ function hitTree(t) {
   burst(t.x - player.dir * 4, t.y - 8, [PALETTE.l, PALETTE.h, PALETTE.c], 5);
   if (t.hp <= 0) {
     t.state = 'stump';
+    note('chop');
     t.regrow = REGROW;
     cam.shake = 5;
     burst(t.x, t.y - 12, [PALETTE.l, PALETTE.h, PALETTE.d, PALETTE.c], 12, 1.4);
@@ -50,6 +51,8 @@ function sayOnce(key, msg) { if (!said[key]) { said[key] = true; toast(msg, 220)
 let lastFullDraw = -1;
 function updateHunger() {
   player.full = Math.max(0, player.full - FULL_DRAIN);
+  if (player.full < 25) note('hungry');
+  if (player.full === 0) note('starve');
   const pct = Math.round(player.full);
   if (pct !== lastFullDraw) {
     lastFullDraw = pct;
@@ -72,13 +75,14 @@ function updateFire(f) {
   }
   if (++f.cook < COOK[f.kind].time) return;
   f.cook = null;
+  note('cooked');
   items.push({ kind: COOK[f.kind].out, x: f.x, y: f.y + 2, z: 0, vz: 1.8, vx: (player.x < f.x ? -1 : 1) * 0.3, vy: 0.1, age: 0 });
   burst(f.x, f.y - 14, ['#ffe066', '#ffffff'], 6, 0.8);
 }
 
 let lastAtDoor = null;
 function update() {
-  if (sleeping) return;
+  if (sleeping || bookOpen) return;
   hints.forEach(([at, msg]) => { if (t === at) toast(msg, 220); });
   if (toastTimer > 0 && --toastTimer === 0) document.getElementById('toast').classList.remove('show');
 
@@ -87,7 +91,9 @@ function update() {
   if (player.moving) {
     if (Math.abs(vx) > 0.2) player.dir = Math.sign(vx);
     const sp = player.full > 0 ? SPEED : SPEED * 0.5;
+    const x0 = player.x, y0 = player.y;
     tryMove(vx * sp, vy * sp);
+    note('walk', Math.hypot(player.x - x0, player.y - y0));
     player.step++;
   }
 
@@ -134,6 +140,7 @@ function update() {
     if (d < 4) {
       items.splice(k, 1);
       inv[it.kind]++;
+      if (it.kind === 'log' || it.kind === 'egg') note(it.kind);
       refreshHud();
       bumpHud(it.kind);
       burst(player.x, player.y - 12, ['#ffe066', '#ffffff'], 4, 0.6);

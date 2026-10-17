@@ -23,6 +23,7 @@ function refreshHud() {
   document.getElementById('coop').style.display = inv.log >= COOP_COST ? 'flex' : 'none';
   document.getElementById('house').style.display = inv.log >= HOUSE_COST && !house ? 'flex' : 'none';
   document.getElementById('eat').style.display = inv.fried + inv.grilled > 0 ? 'flex' : 'none';
+  document.getElementById('book-open').style.display = diary.length ? 'block' : 'none';
 }
 function bumpHud(kind) {
   const el = document.getElementById('slot-' + kind);
@@ -37,6 +38,7 @@ document.getElementById('house').addEventListener('click', () => {
   if (!areaFree(x, y, 17, 15, 12)) { toast('집은 아주 넓은 빈 땅이 필요해요'); return; }
   inv.log -= HOUSE_COST;
   house = { x, y };
+  note('house');
   cam.shake = 6;
   burst(x, y - 12, ['#d9a066', '#5f7fb8', '#ffffff'], 18, 1.6);
   lastAtDoor = null;
@@ -50,6 +52,7 @@ document.getElementById('coop').addEventListener('click', () => {
   const x = Math.round(player.x + player.dir * 24), y = Math.round(player.y + 4);
   if (!areaFree(x, y, 13, 12, 8)) { toast('닭장은 넓은 빈 땅이 필요해요'); return; }
   inv.log -= COOP_COST;
+  note('coop');
   coops.push({ x, y, timer: 60 * 5 });   // 첫 병아리는 금방 나온다
   cam.shake = 4;
   burst(x, y - 10, ['#c98a5a', '#c4524e', '#ffffff'], 14, 1.4);
@@ -68,6 +71,7 @@ document.getElementById('build').addEventListener('click', () => {
   if (!free) { toast('여기엔 놓을 수 없어요. 빈 땅을 보고 눌러 주세요'); return; }
   inv.log -= FIRE_COST;
   fires.push({ x, y });
+  note('fire');
   burst(x, y - 6, ['#ffe066', '#ff9a3c', '#ffffff'], 10, 1.2);
   refreshHud();
   toast(fires.length === 1 ? '모닥불 완성! 오늘 밤은 따뜻하겠다' : '모닥불을 하나 더 만들었어요');
@@ -77,6 +81,7 @@ document.getElementById('eat').addEventListener('click', () => {
   const food = inv.grilled > 0 ? 'grilled' : inv.fried > 0 ? 'fried' : null;
   if (!food) return;
   inv[food]--;
+  note(food === 'grilled' ? 'ateFish' : 'ateEgg');
   player.full = Math.min(FULL_MAX, player.full + (food === 'grilled' ? FULL_PER_FISH : FULL_PER_EGG));
   said.hungry = said.starving = false;   // 다시 배고파지면 또 알려 준다
   burst(player.x, player.y - 12, ['#ffe066', '#ffffff', '#e8434a'], 8, 0.8);

@@ -25,6 +25,9 @@ function saveGame() {
     chickens: chickens.map((ch) => ({ x: Math.round(ch.x), y: Math.round(ch.y), dir: ch.dir, egg: ch.egg, baby: ch.baby || 0 })),
     items: items.map((it) => ({ kind: it.kind, x: Math.round(it.x), y: Math.round(it.y) })),
     said: { ...said },
+    diary,
+    today: Object.fromEntries(Object.entries(today).map(([k, v]) => [k, Math.round(v)])),
+    ever: Object.fromEntries(Object.entries(ever).map(([k, v]) => [k, Math.round(v)])),
     firstEgg,
   };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; } catch (e) { return false; }
@@ -71,6 +74,13 @@ function loadGame() {
   });
   Object.assign(said, d.said && typeof d.said === 'object' ? d.said : {});
   firstEgg = !!d.firstEgg;
+  diary.length = 0;
+  arr(d.diary).forEach((e) => {
+    const lines = arr(e?.lines).filter((s) => typeof s === 'string');
+    if (lines.length) diary.push({ day: Math.max(1, Math.floor(num(e.day, 1))), lines });
+  });
+  Object.keys(today).forEach((k) => { today[k] = Math.max(0, num(d.today?.[k], 0)); });
+  Object.keys(ever).forEach((k) => { ever[k] = Math.max(0, num(d.ever?.[k], 0)); });
   house = d.house && typeof d.house.x === 'number' && typeof d.house.y === 'number' ? { x: d.house.x, y: d.house.y } : null;
   day = Math.max(1, Math.floor(num(d.day, 1)));
   sleepCool = Math.max(0, num(d.sleepCool, 0));

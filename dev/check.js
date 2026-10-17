@@ -1,5 +1,5 @@
 // 확인 시나리오 — index.html?check 로 열면 저절로 돌고 결과를 화면에 띄운다 (window.checkResult 에도 남김)
-// 순서: 나무 베기 → 모닥불 → 닭 알 → 굽기·먹기 → 닭장 → 낚시 → 생선 굽기·먹기 → 집·잠 → 저장·불러오기
+// 순서: 나무 베기 → 모닥불 → 닭 알 → 굽기·먹기 → 닭장 → 낚시 → 생선 굽기·먹기 → 집·잠·일기 → 나무만 벤 날 → 낚시만 한 날 → 일기장 → 저장·불러오기
 // 루프 없이 tick() 을 직접 부르고 섬·난수가 시드로 고정이라, 동작이 같으면 마지막 "지문" 도 같다.
 //   리팩토링(동작을 안 바꾸는 정리) 전후: 지문이 EXPECT 와 같아야 한다.
 //   기능을 바꾼 뒤: 지문이 달라지는 게 맞다. 항목이 전부 통과하면 새 지문을 EXPECT 에 적는다.
@@ -7,7 +7,7 @@
 // 위치를 옮길 때는 걷지 않고 바로 세운다(standAt). 길 찾기가 아니라 섬의 규칙을 확인하는 스크립트라서.
 'use strict';
 (async () => {
-  const EXPECT = 'c36e3dc6';   // 마지막으로 통과한 지문 (2026-10-18, js/ 나누기 전)
+  const EXPECT = 'd47a3e65';   // 마지막으로 통과한 지문 (2026-10-18, 섬 일기)
 
   const out = [];
   const toasts = [];
@@ -64,6 +64,31 @@
     return run(600, () => tr.state === 'stump') && run(300, () => inv.log >= log0 + 2);
   }
 
+  // 낚을 수 있는 물가를 찾아 선다
+  function goFishing() {
+    for (let j = 0; j < MAP_H; j++) for (let i = 0; i < MAP_W; i++) {
+      if (tiles[j][i] === 0) continue;
+      for (let y = j * TILE + 4; y < j * TILE + TILE; y += 4) for (let x = i * TILE + 2; x < i * TILE + TILE; x += 4) {
+        if (!standAt(x, y)) continue;
+        player.dir = 1;
+        if (!nearestTree() && fishingSpot()) return true;
+      }
+    }
+    return false;
+  }
+
+  // 졸릴 때까지 문 앞에서 기다렸다가 자고, 일기를 넘긴다
+  async function sleepNight() {
+    standAt(house.x, house.y + 8);
+    run(sleepCool + 1);
+    standAt(house.x, house.y + 8);
+    run(1);
+    goToSleep();
+    await wait(1000);
+    document.getElementById('wake').click();
+    await wait(1400);
+  }
+
   const atFire = () => standNear(fires[0].x, fires[0].y, [[12, 0], [-12, 0], [12, 4], [-12, 4], [0, 10], [0, -8]]);
 
   function eat() {
@@ -86,6 +111,9 @@
       sleepCool,
       chickens: chickens.map((c) => [Math.round(c.x), Math.round(c.y), c.dir, c.egg, c.baby || 0]),
       items: items.map((it) => [it.kind, Math.round(it.x), Math.round(it.y)]),
+      diary: diary.map((e) => [e.day, ...e.lines]),
+      today: Object.values(today).map(Math.round),
+      ever: Object.values(ever).map(Math.round),
     };
   }
   function fnv(s) {
@@ -129,16 +157,7 @@
     check('병아리', hatched && chickens[chickens.length - 1].baby > 0, `닭 ${n0} → ${chickens.length}`);
 
     // 6. 낚시: 낚을 수 있는 물가를 찾아 선다
-    let spot = false;
-    for (let j = 0; j < MAP_H && !spot; j++) for (let i = 0; i < MAP_W && !spot; i++) {
-      if (tiles[j][i] === 0) continue;
-      for (let y = j * TILE + 4; y < j * TILE + TILE && !spot; y += 4) for (let x = i * TILE + 2; x < i * TILE + TILE && !spot; x += 4) {
-        if (!standAt(x, y)) continue;
-        player.dir = 1;
-        spot = !nearestTree() && !!fishingSpot();
-      }
-    }
-    const cast = spot && run(FISH_STILL + 5, () => player.fish);
+    const cast = goFishing() && run(FISH_STILL + 5, () => player.fish);
     check('낚싯대 던지기', cast, `자리 ${Math.round(player.x)},${Math.round(player.y)}`);
     const waiting = cast && run(40, () => player.fish?.state === 'wait');
     check('일찍 누르면 안내', waiting && reel() === true && toasts[toasts.length - 1].startsWith('아직'), toasts[toasts.length - 1]);
@@ -162,7 +181,14 @@
     const before = { day, stumps: stumps(), eggs: eggsOnGround(), full: player.full, babies: chickens.filter((c) => c.baby > 0) };
     goToSleep();
     check('밤 화면', document.getElementById('night').classList.contains('on'));
-    await wait(2400);   // 밤 0.9초 + 아침 0.5초 + 0.8초 뒤 다시 움직일 수 있다
+    await wait(1000);   // 0.9초 뒤 일기가 펼쳐진다
+    const page = document.getElementById('page');
+    check('일기 한 장', page.classList.contains('show') && document.getElementById('page-day').textContent === '1일째 밤'
+      && page.querySelectorAll('p').length === DIARY_LINES + 1, diary[0]?.lines.join(' / '));
+    check('일기를 넘기기 전엔 밤', sleeping && document.getElementById('night').classList.contains('on'));
+    document.getElementById('wake').click();
+    await wait(1400);   // 아침 0.5초 + 0.8초 뒤 다시 움직일 수 있다
+    check('아침', !sleeping && !document.getElementById('night').classList.contains('on'));
     check('하루 지남', day === before.day + 1 && document.getElementById('day').textContent === day + '일째', `${before.day} → ${day}일째`);
     check('밤사이 나무 회복', before.stumps > 0 && stumps() === 0, `그루터기 ${before.stumps} → ${stumps()}`);
     check('밤사이 알', eggsOnGround() > before.eggs || before.eggs >= NIGHT_EGG_LIMIT, `땅의 알 ${before.eggs} → ${eggsOnGround()}`);
@@ -171,12 +197,35 @@
     goToSleep();
     check('바로 또 자기는 막힘', toasts[toasts.length - 1].includes('졸리지'), toasts[toasts.length - 1]);
 
+    // 둘째 날: 나무만 벤다 / 셋째 날: 낚시만 한다 → 일기 셋이 서로 달라야 한다
+    for (let k = 0; k < 4; k++) chopOne();
+    await sleepNight();
+    if (goFishing()) for (let k = 0; k < 3; k++) {
+      if (!run(60 * 8, () => player.fish?.state === 'bite')) break;
+      if (k === 1) run(FISH_BITE + 1);   // 한 번은 놓친다
+      else { reel(); run(120); }
+    }
+    await sleepNight();
+    const texts = diary.map((e) => e.lines.join(' '));
+    check('일기 세 편', diary.length === 3 && day === 4 && diary.every((e) => e.lines.length === DIARY_LINES + 1), `일기 ${diary.length} · ${day}일째`);
+    check('일기가 서로 다름', new Set(texts).size === 3 && diary.every((e, i) => i === 0 || e.lines.slice(0, -1).some((s) => !diary[i - 1].lines.includes(s))));
+
+    // 일기장
+    check('일기장 버튼', document.getElementById('book-open').style.display === 'block');
+    document.getElementById('book-open').click();
+    const full0 = player.full;
+    run(30);
+    check('일기장 열기 · 멈춤', bookOpen && document.getElementById('book').classList.contains('on')
+      && document.querySelectorAll('#book-list h3').length === 3 && player.full === full0);
+    document.getElementById('book-close').click();
+    check('일기장 닫기', !bookOpen && !document.getElementById('book').classList.contains('on'));
+
     // 9. 저장 · 불러오기
     const saved = JSON.stringify(summary());
     check('저장', saveGame() === true);
     inv.log = 999; house = null; day = 1;
-    fires.length = 0; coops.length = 0; chickens.length = 0; items.length = 0;
-    check('불러오기', loadGame() === true && JSON.stringify(summary()) === saved, `집 ${!!house} · ${day}일째 · 닭 ${chickens.length}`);
+    fires.length = 0; coops.length = 0; chickens.length = 0; items.length = 0; diary.length = 0;
+    check('불러오기', loadGame() === true && JSON.stringify(summary()) === saved, `집 ${!!house} · ${day}일째 · 닭 ${chickens.length} · 일기 ${diary.length}`);
     localStorage.setItem(SAVE_KEY, '{broken');
     let broken;
     try { broken = loadGame(); } catch (e) { broken = 'throw: ' + e.message; }
@@ -199,6 +248,8 @@
   const box = document.createElement('pre');
   box.id = 'check';
   box.style.cssText = 'position:fixed;inset:0;margin:0;padding:10px;overflow:auto;background:rgba(29,26,36,.9);color:#fbfaf5;font:12px/1.6 monospace;white-space:pre-wrap;z-index:9';
+  lines.push('', '— 일기 —');
+  diary.forEach((e) => lines.push(`[${e.day}일째] ${e.lines.join(' ')}`));
   box.textContent = lines.join('\n');
   document.body.appendChild(box);
   window.checkResult = { pass: out.length - fail, fail, print, list: out };

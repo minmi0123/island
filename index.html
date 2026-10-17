@@ -27,7 +27,26 @@
   #hunger .bar i { display: block; height: 100%; background: #f5b93a; }
   #hunger.low .bar i { background: #e8434a; }
   #hunger.low { animation: bump .6s infinite; }
-  #reset { position: absolute; right: 8px; top: 46px; padding: 2px 8px; font-size: 11px; font-family: inherit; cursor: pointer; opacity: .85; }
+  #menu { position: absolute; right: 8px; top: 46px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  #menu button { padding: 2px 8px; font-size: 11px; font-family: inherit; cursor: pointer; opacity: .85; }
+  #menu #book-open { display: none; font-size: 13px; padding: 3px 10px; opacity: 1; }
+  /* 일기: 줄 쳐진 종이 */
+  .paper { background: #fbf3e0 repeating-linear-gradient(transparent 0 23px, #ead9b8 23px 24px) 0 10px; color: #3d2c3a; border: 3px solid #3d2c3a; border-radius: 4px; box-shadow: 0 4px 0 #0005; padding: 10px 14px 12px; font-size: 14px; line-height: 24px; word-break: keep-all; }
+  .paper h2, .paper h3 { margin: 0; font-size: 15px; line-height: 24px; }
+  .paper h3 { margin-top: 24px; color: #a8693f; }
+  .paper h3:first-child { margin-top: 0; }
+  .paper p { margin: 0; }
+  .paper button { display: block; margin: 12px auto 0; padding: 4px 16px; font-size: 14px; font-family: inherit; font-weight: 800; cursor: pointer; }
+  #page { position: absolute; left: 7%; right: 7%; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity .6s; pointer-events: none; }
+  #page.show { opacity: 1; pointer-events: auto; }
+  #page.show p, #page.show #wake { animation: ink .7s both; }
+  #page p, #page #wake { opacity: 0; }
+  @keyframes ink { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+  #book { position: absolute; inset: 0; background: #1d1a2ee6; display: none; flex-direction: column; padding: 14px 10px; box-sizing: border-box; }
+  #book.on { display: flex; }
+  #book .paper { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #book .paper { background-image: none; }
+  #book-list { flex: 1; overflow-y: auto; min-height: 0; background: repeating-linear-gradient(transparent 0 23px, #ead9b8 23px 24px); background-attachment: local; }   /* 줄이 글과 같이 스크롤된다 */
   #toast { position: absolute; left: 50%; top: 56px; transform: translateX(-50%); padding: 8px 14px; font-size: 14px; white-space: nowrap; opacity: 0; transition: opacity .4s; pointer-events: none; }
   #toast.show { opacity: 1; }
 </style>
@@ -43,7 +62,10 @@
     <div class="slot panel" id="slot-grilled"><img id="icon-grilled" alt=""><span id="cnt-grilled">0</span></div>
   </div>
   <div id="hunger" class="panel"><span id="day">1일째</span>배<div class="bar"><i id="hunger-fill"></i></div></div>
-  <button id="reset" class="panel">처음부터</button>
+  <div id="menu">
+    <button id="book-open" class="panel">일기장</button>
+    <button id="reset" class="panel">처음부터</button>
+  </div>
   <div id="actions">
     <button id="build" class="panel">모닥불<small>통나무 3</small></button>
     <button id="coop" class="panel">닭장<small>통나무 5</small></button>
@@ -51,7 +73,12 @@
     <button id="sleep" class="panel">자기<small>밤 넘기기</small></button>
     <button id="eat" class="panel">먹기<small id="eat-what">구운 달걀</small></button>
   </div>
-  <div id="night"></div>
+  <div id="night">
+    <div id="page" class="paper"><h2 id="page-day"></h2><div id="page-lines"></div><button id="wake" class="panel">아침으로</button></div>
+  </div>
+  <div id="book">
+    <div class="paper"><h2>섬 일기</h2><div id="book-list"></div><button id="book-close" class="panel">닫기</button></div>
+  </div>
   <div id="toast" class="panel"></div>
 </div>
 <script src="js/base.js"></script>
@@ -64,6 +91,7 @@
 <script src="js/animals.js"></script>
 <script src="js/fishing.js"></script>
 <script src="js/night.js"></script>
+<script src="js/diary.js"></script>
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/save.js"></script>

@@ -6,6 +6,7 @@ function updateChicken(ch) {
   const pdx = ch.x - player.x, pdy = ch.y - player.y, pd = Math.hypot(pdx, pdy);
   if (player.moving && pd < 14 && ch.state !== 'flee') {
     ch.state = 'flee';
+    note('scared');
     ch.timer = 40;
     ch.tx = ch.x + (pdx / (pd || 1)) * 30;
     ch.ty = ch.y + (pdy / (pd || 1)) * 30;
@@ -43,6 +44,7 @@ function updateChicken(ch) {
 
   if (ch.baby > 0) {
     if (--ch.baby === 0) {
+      note('grown');
       burst(ch.x, ch.y - 8, ['#ffffff', '#ffe066', PALETTE.R], 8, 0.8);
       sayOnce('grown', '병아리가 닭이 됐어요!');
     }
@@ -71,5 +73,6 @@ function spawnChick(c) {
   const x = c.x + Math.round(rand() * 6 - 3), y = c.y + 6;
   chickens.push({ x, y, dir: rand() < 0.5 ? 1 : -1, state: 'walk', timer: 60, tx: x + Math.round(rand() * 20 - 10), ty: y + 14, step: 0, egg: nextEgg(), baby: GROW_TIME });
   burst(x, y - 4, ['#ffe066', '#ffffff'], 6, 0.6);
+  note('chick');
   sayOnce('chick', '닭장에서 병아리가 나왔어요!');
 }

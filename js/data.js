@@ -46,5 +46,8 @@ const SLEEP_COOL = 60 * 90;                    // 한 번 자고 나면 이만�
 const SLEEP_HUNGER = 15;                       // 자고 일어나면 배가 이만큼 꺼져 있다
 const NIGHT_EGG_LIMIT = 12;                    // 밤사이 낳는 알은 땅에 이만큼까지
 
+// 일기
+const DIARY_LINES = 3;                         // 하루 일기 본문 줄 수 (맺음말 빼고)
+
 const fishWait = () => FISH_WAIT_MIN + Math.floor(rand() * (FISH_WAIT_MAX - FISH_WAIT_MIN));
 const nextEgg = () => EGG_MIN + Math.floor(rand() * (EGG_MAX - EGG_MIN));

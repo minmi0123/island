@@ -19,7 +19,7 @@ function splash(x, y, n = 4) {
 function updateFishing() {
   const f = player.fish;
   if (player.moving || player.swing > 0) {
-    if (f && f.state === 'bite') toast('물고기가 도망갔어요', 90);
+    if (f && f.state === 'bite') { note('miss'); toast('물고기가 도망갔어요', 90); }
     player.fish = null;
     player.still = 0;
     return;
@@ -36,7 +36,7 @@ function updateFishing() {
   if (--f.timer > 0) return;
   if (f.state === 'cast') { f.state = 'wait'; f.timer = fishWait(); splash(f.bx, f.by); }
   else if (f.state === 'wait') { f.state = 'bite'; f.timer = FISH_BITE; splash(f.bx, f.by, 6); sayOnce('bite', '찌가 쏙! 화면을 톡 눌러요 (PC: 스페이스)'); }
-  else if (f.state === 'bite') { f.state = 'miss'; f.timer = 50; toast('놓쳤다… 다시 기다려요', 90); }
+  else if (f.state === 'bite') { note('miss'); f.state = 'miss'; f.timer = 50; toast('놓쳤다… 다시 기다려요', 90); }
   else { f.state = 'wait'; f.timer = fishWait(); }   // miss · got 다음엔 다시 기다린다
 }
 
@@ -47,12 +47,14 @@ function reel() {
   if (f.state === 'bite') {
     items.push({ kind: 'fish', x: f.bx, y: f.by, z: 0, vz: 2.4, vx: (player.x - f.bx) / 32, vy: (player.y - 2 - f.by) / 32, age: 30 });
     splash(f.bx, f.by, 10);
+    note('fish');
     f.state = 'got';
     f.timer = 60;
     return true;
   }
   if (f.state === 'wait') {
     f.timer = fishWait();
+    note('early');
     toast('아직이에요. 찌가 쏙 들어갈 때 눌러요', 90);
     return true;
   }
