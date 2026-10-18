@@ -7,7 +7,7 @@
 // 위치를 옮길 때는 걷지 않고 바로 세운다(standAt). 길 찾기가 아니라 섬의 규칙을 확인하는 스크립트라서.
 'use strict';
 (async () => {
-  const EXPECT = '0e2230ad';   // 마지막으로 통과한 지문 (2026-10-18, 한 판 해 보고 숫자 조정 · 떠날 때 생선)
+  const EXPECT = '6c63d3fe';   // 마지막으로 통과한 지문 (2026-10-18, 가방)
 
   const out = [];
   const toasts = [];
@@ -222,6 +222,21 @@
       && document.querySelectorAll('#book-list h3').length === 3 && player.full === full0);
     document.getElementById('book-close').click();
     check('일기장 닫기', !bookOpen && !document.getElementById('book').classList.contains('on'));
+
+    // 가방: 가진 것만 보이고, 열린 동안 멈추고, 음식은 골라 먹는다
+    inv.fried = 2; inv.grilled = 1;
+    refreshHud();
+    document.getElementById('bag-open').click();
+    const bagFull = player.full;
+    run(30);
+    const rows = [...document.querySelectorAll('#bag-list .bag-row b')].map((el) => el.textContent);
+    check('가방 열기 · 멈춤', bagOpen && player.full === bagFull && rows.length === BAG_ITEMS.filter((it) => inv[it.kind] > 0).length, rows.join(' · '));
+    const eggRow = [...document.querySelectorAll('#bag-list .bag-row')].find((r) => r.querySelector('b').textContent.startsWith('구운 달걀'));
+    eggRow.querySelector('button').click();   // 생선이 있어도 달걀을 골라 먹는다
+    check('가방에서 골라 먹기', inv.fried === 1 && inv.grilled === 1 && Math.abs(player.full - Math.min(FULL_MAX, bagFull + FULL_PER_EGG)) < 1e-9
+      && document.querySelector('#bag-list').textContent.includes('구운 달걀 1'));
+    document.getElementById('bag-close').click();
+    check('가방 닫기', !bagOpen && !document.getElementById('bag').classList.contains('on'));
 
     // 10. 모닥불 옆에서 자기: 집보다 배가 더 고프다
     atFire();

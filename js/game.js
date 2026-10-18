@@ -82,7 +82,7 @@ function updateFire(f) {
 
 let lastSleepSpot = null;
 function update() {
-  if (sleeping || bookOpen || choiceOpen || endingOpen) return;
+  if (sleeping || bookOpen || bagOpen || choiceOpen || endingOpen) return;
   hints.forEach(([at, msg]) => { if (t === at) toast(msg, 220); });
   if (toastTimer > 0 && --toastTimer === 0) document.getElementById('toast').classList.remove('show');
   if (sail) { updateSail(); followCam(); return; }   // 떠나는 중에는 뗏목만 움직인다

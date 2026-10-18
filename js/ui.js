@@ -83,18 +83,24 @@ document.getElementById('build').addEventListener('click', () => {
   toast(fires.length === 1 ? '모닥불 완성! 오늘 밤은 따뜻하겠다' : '모닥불을 하나 더 만들었어요');
 });
 
-document.getElementById('eat').addEventListener('click', () => {
-  const food = eatWhat();
-  if (!food) return;
+// 먹을 수 있는 것: 배 얼마나 차나 · 일기에 세는 이름 · 먹고 나서 한마디
+const FOOD = {
+  fried: { full: FULL_PER_EGG, note: 'ateEgg', say: '냠냠. 힘이 난다' },
+  grilled: { full: FULL_PER_FISH, note: 'ateFish', say: '생선 맛있다! 든든해' },
+};
+function eatFood(food) {
+  if (!FOOD[food] || inv[food] <= 0) return false;
   inv[food]--;
-  note(food === 'grilled' ? 'ateFish' : 'ateEgg');
-  player.full = Math.min(FULL_MAX, player.full + (food === 'grilled' ? FULL_PER_FISH : FULL_PER_EGG));
+  note(FOOD[food].note);
+  player.full = Math.min(FULL_MAX, player.full + FOOD[food].full);
   said.hungry = said.starving = false;   // 다시 배고파지면 또 알려 준다
   burst(player.x, player.y - 12, ['#ffe066', '#ffffff', '#e8434a'], 8, 0.8);
   refreshHud();
   if (inv[food] > 0) bumpHud(food);
-  toast(player.full >= FULL_MAX ? '배불러요!' : food === 'grilled' ? '생선 맛있다! 든든해' : '냠냠. 힘이 난다');
-});
+  toast(player.full >= FULL_MAX ? '배불러요!' : FOOD[food].say);
+  return true;
+}
+document.getElementById('eat').addEventListener('click', () => eatFood(eatWhat()));
 
 function fit() {
   scale = Math.min(innerWidth / W, innerHeight / H);

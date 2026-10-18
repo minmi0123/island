@@ -12,7 +12,7 @@ addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 let joy = null;
 let scale = 1;
 wrap.addEventListener('pointerdown', (e) => {
-  if (e.target.closest('button, #book, #choice, #ending')) return;
+  if (e.target.closest('button, #book, #bag, #choice, #ending')) return;
   if (player.fish && player.fish.state === 'bite') { reel(); return; }   // 늦으면 놓치니까 누르는 순간 당긴다
   joy = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, fishing: !!player.fish };
 });

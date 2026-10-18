@@ -30,6 +30,7 @@
   #menu { position: absolute; right: 8px; top: 46px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
   #menu button { padding: 2px 8px; font-size: 11px; font-family: inherit; cursor: pointer; opacity: .85; }
   #menu #book-open { display: none; font-size: 13px; padding: 3px 10px; opacity: 1; }
+  #menu #bag-open { font-size: 13px; padding: 3px 10px; opacity: 1; }
   /* 일기: 줄 쳐진 종이 */
   .paper { background: #fbf3e0 repeating-linear-gradient(transparent 0 23px, #ead9b8 23px 24px) 0 10px; color: #3d2c3a; border: 3px solid #3d2c3a; border-radius: 4px; box-shadow: 0 4px 0 #0005; padding: 10px 14px 12px; font-size: 14px; line-height: 24px; word-break: keep-all; }
   .paper h2, .paper h3 { margin: 0; font-size: 15px; line-height: 24px; }
@@ -46,6 +47,18 @@
   #book.on { display: flex; }
   #book .paper { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #book .paper { background-image: none; }
+  #bag { position: absolute; inset: 0; background: #1d1a2ecc; display: none; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
+  #bag.on { display: flex; }
+  #bag .paper { width: 100%; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background-image: none; }
+  #bag-list { overflow-y: auto; min-height: 0; margin-top: 6px; }
+  .bag-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px dashed #ead9b8; }
+  .bag-row:first-child { border-top: 0; }
+  .bag-row img { flex: none; image-rendering: pixelated; }
+  .bag-row div { flex: 1; line-height: 18px; }
+  .bag-row b { display: block; font-size: 15px; }
+  .bag-row small { display: block; font-size: 12px; color: #8a6a5a; }
+  .paper .bag-row button { flex: none; margin: 0; padding: 4px 10px; font-size: 13px; }
+  .bag-empty { color: #8a6a5a; }
   #choice, #ending { position: absolute; inset: 0; background: #1d1a2ecc; display: none; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
   #choice.on, #ending.on { display: flex; }
   #choice .paper { width: 100%; text-align: center; }
@@ -73,6 +86,7 @@
   </div>
   <div id="hunger" class="panel"><span id="day">1일째</span>배<div class="bar"><i id="hunger-fill"></i></div></div>
   <div id="menu">
+    <button id="bag-open" class="panel">가방</button>
     <button id="book-open" class="panel">일기장</button>
     <button id="reset" class="panel">처음부터</button>
   </div>
@@ -90,6 +104,9 @@
   </div>
   <div id="book">
     <div class="paper"><h2>섬 일기</h2><div id="book-list"></div><button id="book-close" class="panel">닫기</button></div>
+  </div>
+  <div id="bag">
+    <div class="paper"><h2>가방</h2><div id="bag-list"></div><button id="bag-close" class="panel">닫기</button></div>
   </div>
   <div id="choice">
     <div class="paper">
@@ -122,6 +139,7 @@
 <script src="js/ending.js"></script>
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/bag.js"></script>
 <script src="js/save.js"></script>
 <script src="js/main.js"></script>
 </body>
