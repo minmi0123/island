@@ -70,7 +70,7 @@
   #ending .row { display: flex; gap: 8px; }
   #ending .row button { margin: 10px 0 0; }
   #book-list { flex: 1; overflow-y: auto; min-height: 0; background: repeating-linear-gradient(transparent 0 23px, #ead9b8 23px 24px); background-attachment: local; }   /* 줄이 글과 같이 스크롤된다 */
-  #toast { position: absolute; left: 50%; top: 56px; transform: translateX(-50%); padding: 8px 14px; font-size: 14px; white-space: nowrap; opacity: 0; transition: opacity .4s; pointer-events: none; }
+  #toast { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); padding: 8px 14px; font-size: 14px; white-space: nowrap; opacity: 0; transition: opacity .4s; pointer-events: none; }
   #toast.show { opacity: 1; }
 </style>
 </head>
@@ -83,6 +83,8 @@
     <div class="slot panel" id="slot-fried"><img id="icon-fried" alt="" style="width:21px;height:18px"><span id="cnt-fried">0</span></div>
     <div class="slot panel" id="slot-fish"><img id="icon-fish" alt=""><span id="cnt-fish">0</span></div>
     <div class="slot panel" id="slot-grilled"><img id="icon-grilled" alt=""><span id="cnt-grilled">0</span></div>
+    <div class="slot panel" id="slot-meat"><img id="icon-meat" alt="" style="width:27px;height:17px"><span id="cnt-meat">0</span></div>
+    <div class="slot panel" id="slot-roast"><img id="icon-roast" alt="" style="width:27px;height:17px"><span id="cnt-roast">0</span></div>
   </div>
   <div id="hunger" class="panel"><span id="day">1일째</span>배<div class="bar"><i id="hunger-fill"></i></div></div>
   <div id="menu">

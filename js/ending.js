@@ -27,7 +27,7 @@ function islandTitle(kind) {
   const cands = [
     [e.fish / 8, '낚시꾼'], [e.chop / 25, '나무꾼'], [e.egg / 15, '닭 집사'], [e.scared / 30, '닭들의 공포'],
     [e.starve / 3600, '배고픈 철학자'], [e.walk / 30000, '섬 산책왕'], [e.cooked / 10, '모닥불 요리사'],
-    [e.outside / 3, '별 보며 자는 사람'], [e.miss > e.fish ? e.miss / 6 : 0, '놓친 게 더 많은 어부'],
+    [e.outside / 3, '별 보며 자는 사람'], [e.hunt / 4, '닭 사냥꾼'], [e.miss > e.fish ? e.miss / 6 : 0, '놓친 게 더 많은 어부'],
   ];
   const best = cands.reduce((a, b) => (b[0] > a[0] ? b : a));
   const name = best[0] >= 1 ? best[1] : '평범한 표류자';
@@ -124,7 +124,7 @@ function drawCard(kind) {
   Object.keys(ever).forEach((k) => { e[k] = Math.round(ever[k] + today[k]); });
   g.font = `600 13px ${FONT}`;
   g.fillStyle = '#8a6a5a';
-  g.fillText(`나무 ${e.chop}그루 · 물고기 ${e.fish}마리 · 달걀 ${e.egg}개`, 180, 470);
+  g.fillText(`나무 ${e.chop}그루 · 물고기 ${e.fish}마리 · 달걀 ${e.egg}개` + (e.hunt ? ` · 닭 ${e.hunt}마리` : ''), 180, 470);
   g.fillText(`일기 ${diary.length}편`, 180, 492);
   g.fillStyle = '#c4a47e';
   g.fillRect(150, 516, 60, 1);

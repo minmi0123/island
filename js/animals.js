@@ -1,25 +1,47 @@
 // 닭 · 병아리 · 닭장
 'use strict';
 
+// 도망: 주인공 반대쪽으로 달린다. 막히면 45° · 90° 비껴 간다. 어느 쪽도 못 가면 구석에 몰린 것 (false)
+const FLEE_TURNS = [0, Math.PI / 4, Math.PI / 2];
+function fleeStep(ch, ax, ay) {
+  if (chickenBlocked(ch.x, ch.y)) { ch.x += ax * CHICKEN_FLEE; ch.y += ay * CHICKEN_FLEE; return true; }   // 끼었으면 빠져나오게 둔다
+  const side = ch.side || 1;
+  for (const a of FLEE_TURNS) {
+    for (const s of a ? [side, -side] : [1]) {
+      const c = Math.cos(a * s), sn = Math.sin(a * s);
+      const vx = ax * c - ay * sn, vy = ax * sn + ay * c;
+      const nx = ch.x + vx * CHICKEN_FLEE, ny = ch.y + vy * CHICKEN_FLEE;
+      if (chickenBlocked(nx, ny)) continue;
+      ch.x = nx; ch.y = ny;
+      if (Math.abs(vx) > 0.2) ch.dir = Math.sign(vx);
+      if (a) ch.side = s;   // 다음에도 같은 쪽으로 비껴 간다 (좌우로 떨지 않게)
+      return true;
+    }
+  }
+  return false;
+}
+
 // 닭: 서 있기 → 걷기 / 쪼기. 주인공이 뛰어들면 도망. 가끔 알을 낳는다
 function updateChicken(ch) {
   const pdx = ch.x - player.x, pdy = ch.y - player.y, pd = Math.hypot(pdx, pdy);
-  if (player.moving && pd < 14 && ch.state !== 'flee') {
+  if (player.moving && pd < CHICKEN_NOTICE && ch.state !== 'flee') {
     ch.state = 'flee';
     note('scared');
+    if (ever.scared + today.scared >= HUNT_HINT && !ch.baby) sayOnce('huntIdea', '닭을 구석으로 몰면 잡을 수 있을 것 같아요');
     ch.timer = 40;
-    ch.tx = ch.x + (pdx / (pd || 1)) * 30;
-    ch.ty = ch.y + (pdy / (pd || 1)) * 30;
     burst(ch.x, ch.y - 6, ['#ffffff'], 2, 0.5);   // 깃털
   }
 
-  if (ch.state === 'walk' || ch.state === 'flee') {
+  if (ch.state === 'flee') {
+    const moved = fleeStep(ch, pdx / (pd || 1), pdy / (pd || 1));
+    ch.step++;
+    if (!moved || (--ch.timer <= 0 && pd > CHICKEN_NOTICE)) { ch.state = 'idle'; ch.timer = 40 + Math.floor(rand() * 100); }   // 주인공이 멀어질 때까지 달린다
+  } else if (ch.state === 'walk') {
     const dx = ch.tx - ch.x, dy = ch.ty - ch.y, d = Math.hypot(dx, dy);
-    const sp = ch.state === 'flee' ? CHICKEN_FLEE : CHICKEN_SPEED;
     if (Math.abs(dx) > 0.5) ch.dir = Math.sign(dx);
     let moved = false;
     if (d > 1) {
-      const nx = ch.x + dx / d * sp, ny = ch.y + dy / d * sp;
+      const nx = ch.x + dx / d * CHICKEN_SPEED, ny = ch.y + dy / d * CHICKEN_SPEED;
       const stuck = chickenBlocked(ch.x, ch.y);   // 모닥불·다시 자란 나무에 끼었으면 빠져나오게 둔다
       if (stuck || !chickenBlocked(nx, ch.y)) { ch.x = nx; moved = true; }
       if (stuck || !chickenBlocked(ch.x, ny)) { ch.y = ny; moved = true; }
@@ -75,4 +97,18 @@ function spawnChick(c) {
   burst(x, y - 4, ['#ffe066', '#ffffff'], 6, 0.6);
   note('chick');
   sayOnce('chick', '닭장에서 병아리가 나왔어요!');
+}
+
+// 닭 사냥: 걷다가 다 큰 닭에 닿으면 잡는다. 닭이 더 빨라서 물가 · 건물 구석으로 몰아야 닿는다. 병아리는 안 잡는다
+function catchChicken() {
+  const k = chickens.findIndex((ch) => !(ch.baby > 0) && Math.hypot(ch.x - player.x, ch.y - player.y) < CATCH_R);
+  if (k < 0) return;
+  const ch = chickens[k];
+  chickens.splice(k, 1);
+  note('hunt');
+  cam.shake = 3;
+  burst(ch.x, ch.y - 6, ['#ffffff', PALETTE.w, PALETTE.R], 12, 1.2);   // 깃털
+  items.push({ kind: 'meat', x: ch.x, y: ch.y, z: 0, vz: 2, vx: 0, vy: 0.1, age: 0 });
+  if (!chickens.length && !coops.length) toast('닭이 한 마리도 안 남았어요… 이제 달걀은 없어요');
+  else sayOnce('caught', '닭을 잡았다! 모닥불에 구우면 든든해요');
 }

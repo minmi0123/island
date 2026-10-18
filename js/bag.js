@@ -7,6 +7,8 @@ const BAG_ITEMS = [   // 가방에 보이는 순서
   { kind: 'fried', name: '구운 달걀', say: () => `먹으면 배 +${FULL_PER_EGG}` },
   { kind: 'fish', name: '물고기', say: () => '물가에 가만히 서 있으면 낚는다. 모닥불에 굽는다' },
   { kind: 'grilled', name: '구운 생선', say: () => `먹으면 배 +${FULL_PER_FISH}. 떠날 때 ${RAFT_FISH}마리 챙긴다` },
+  { kind: 'meat', name: '닭고기', say: () => '닭을 구석으로 몰면 잡힌다. 모닥불에 굽는다' },
+  { kind: 'roast', name: '구운 닭고기', say: () => `먹으면 배 +${FULL_PER_MEAT}` },
 ];
 let bagOpen = false;
 

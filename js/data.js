@@ -13,6 +13,7 @@ const FULL_DRAIN = FULL_MAX / (60 * 150);      // 가만히 있어도 2분 30초
 const FULL_PER_HIT = 1.5;                      // 도끼질 한 번
 const FULL_PER_EGG = 35;
 const FULL_PER_FISH = 50;
+const FULL_PER_MEAT = 60;
 
 // 짓기 (통나무)
 const FIRE_COST = 3;
@@ -21,12 +22,15 @@ const HOUSE_COST = 8;
 
 // 닭 · 닭장
 const CHICKEN_COUNT = 5;
-const CHICKEN_SPEED = 0.35, CHICKEN_FLEE = 1.0;
+const CHICKEN_SPEED = 0.35, CHICKEN_FLEE = 1.3;   // 도망은 주인공(SPEED)보다 빠르다. 넓은 데선 못 잡는다
+const CHICKEN_NOTICE = 14;                     // 걷는 주인공이 이만큼 가까우면 닭이 달아난다
 const EGG_MIN = 60 * 20, EGG_MAX = 60 * 40;   // 알 낳는 간격
 const EGG_LIMIT = 6;                           // 땅에 깔린 알이 이만큼이면 더 안 낳는다
 const COOP_SPAWN = 60 * 30;                    // 닭장 하나가 병아리를 내보내는 간격
 const COOP_ROOM = 4;                           // 닭장 하나당 늘어나는 닭 수
 const GROW_TIME = 60 * 40;                     // 병아리가 닭이 되는 시간
+const CATCH_R = 6;                             // 걷다가 다 큰 닭이 이만큼 가까우면 잡는다. 닭이 더 빨라서 구석으로 몰아야 닿는다
+const HUNT_HINT = 8;                           // 닭을 이만큼 놀래면 사냥 안내
 
 // 굽기
 const COOK_TIME = 120;                         // 달걀 하나 굽는 시간
@@ -34,6 +38,7 @@ const COOK_REACH = 18;
 const COOK = {   // 날것 → 구운 것
   egg: { out: 'fried', time: COOK_TIME },
   fish: { out: 'grilled', time: 180 },
+  meat: { out: 'roast', time: 240 },
 };
 
 // 낚시

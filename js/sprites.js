@@ -21,6 +21,9 @@ const PALETTE = {
   b: '#f0c24a', // 병아리 날개
   F: '#ff9a5a', // 물고기
   f: '#e86a3a', // 물고기 어두운 쪽
+  M: '#f29a9a', // 닭고기
+  m: '#d0697a', // 닭고기 어두운 쪽
+  W: '#f3ecdc', // 뼈
 };
 const C = {
   water: '#7ba4e0', waterDeep: '#6e97d8', foam: '#b4d0f2',
@@ -138,6 +141,17 @@ const FISH = [
   '..ooooo....',
 ];
 
+// 닭고기 11x7 — 왼쪽 살, 오른쪽 뼈
+const MEAT = [
+  '..oooo.....',
+  '.oMMMMo..oo',
+  'oMMMMMMooWo',
+  'oMMMMMmWWWo',
+  'oMmMMmmooWo',
+  '.ommmmo..oo',
+  '..oooo.....',
+];
+
 // 구운 달걀 7x6
 const FRIED = [
   '.ooooo.',
@@ -190,6 +204,8 @@ const SPR = {
   fried: makeSprite(FRIED),
   fish: makeSprite(FISH),
   grilled: makeSprite(FISH, { F: '#d08850', f: '#8a4a2a', w: '#5a3a2a' }),   // 석쇠 자국
+  meat: makeSprite(MEAT),
+  roast: makeSprite(MEAT, { M: '#d08850', m: '#8a4a2a' }),
   chicken: {},
   chick: {},
 };

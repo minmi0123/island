@@ -15,21 +15,23 @@ function refreshHud() {
   document.getElementById('cnt-fried').textContent = inv.fried;
   document.getElementById('cnt-fish').textContent = inv.fish;
   document.getElementById('cnt-grilled').textContent = inv.grilled;
-  ['egg', 'fried', 'fish', 'grilled'].forEach((k) => {   // 0 개인 칸은 숨긴다
+  document.getElementById('cnt-meat').textContent = inv.meat;
+  document.getElementById('cnt-roast').textContent = inv.roast;
+  ['egg', 'fried', 'fish', 'grilled', 'meat', 'roast'].forEach((k) => {   // 0 개인 칸은 숨긴다
     document.getElementById('slot-' + k).style.display = inv[k] > 0 ? 'flex' : 'none';
   });
-  document.getElementById('eat-what').textContent = eatWhat() === 'grilled' ? '구운 생선' : '구운 달걀';
+  const food = eatWhat();
+  if (food) document.getElementById('eat-what').textContent = FOOD[food].name;
   document.getElementById('build').style.display = inv.log >= FIRE_COST ? 'flex' : 'none';
   document.getElementById('coop').style.display = inv.log >= COOP_COST ? 'flex' : 'none';
   document.getElementById('house').style.display = inv.log >= HOUSE_COST && !house ? 'flex' : 'none';
-  document.getElementById('eat').style.display = inv.fried + inv.grilled > 0 ? 'flex' : 'none';
+  document.getElementById('eat').style.display = food ? 'flex' : 'none';
   document.getElementById('book-open').style.display = diary.length ? 'block' : 'none';
 }
-// 먹기 버튼이 먹는 것: 생선이 먼저. 뗏목 터를 잡은 뒤엔 생선은 바다에서 먹게 달걀부터
+// 먹기 버튼이 먹는 것: 든든한 것부터. 뗏목 터를 잡은 뒤엔 생선은 바다에서 먹게 맨 뒤로
 function eatWhat() {
-  if (inv.fried + inv.grilled === 0) return null;
-  if (raft) return inv.fried > 0 ? 'fried' : 'grilled';
-  return inv.grilled > 0 ? 'grilled' : 'fried';
+  const order = raft ? ['fried', 'roast', 'grilled'] : ['roast', 'grilled', 'fried'];
+  return order.find((k) => inv[k] > 0) || null;
 }
 function bumpHud(kind) {
   const el = document.getElementById('slot-' + kind);
@@ -85,8 +87,9 @@ document.getElementById('build').addEventListener('click', () => {
 
 // 먹을 수 있는 것: 배 얼마나 차나 · 일기에 세는 이름 · 먹고 나서 한마디
 const FOOD = {
-  fried: { full: FULL_PER_EGG, note: 'ateEgg', say: '냠냠. 힘이 난다' },
-  grilled: { full: FULL_PER_FISH, note: 'ateFish', say: '생선 맛있다! 든든해' },
+  fried: { name: '구운 달걀', full: FULL_PER_EGG, note: 'ateEgg', say: '냠냠. 힘이 난다' },
+  grilled: { name: '구운 생선', full: FULL_PER_FISH, note: 'ateFish', say: '생선 맛있다! 든든해' },
+  roast: { name: '구운 닭고기', full: FULL_PER_MEAT, note: 'ateMeat', say: '닭고기다! 배가 든든해' },
 };
 function eatFood(food) {
   if (!FOOD[food] || inv[food] <= 0) return false;
@@ -115,3 +118,5 @@ document.getElementById('icon-egg').src = SPR.egg.toDataURL();
 document.getElementById('icon-fried').src = SPR.fried.toDataURL();
 document.getElementById('icon-fish').src = SPR.fish.toDataURL();
 document.getElementById('icon-grilled').src = SPR.grilled.toDataURL();
+document.getElementById('icon-meat').src = SPR.meat.toDataURL();
+document.getElementById('icon-roast').src = SPR.roast.toDataURL();

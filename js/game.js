@@ -67,7 +67,7 @@ function updateHunger() {
 function updateFire(f) {
   if (t % 10 === 0) parts.push({ x: f.x + Math.round(rand() * 4 - 2), y: f.y - 8, vx: (rand() - 0.5) * 0.3, vy: -0.4 - rand() * 0.3, g: 0, life: 40, age: 0, color: rand() < 0.5 ? '#ffb000' : '#ff7a3c', w: 1 });
   const near = Math.abs(player.x - f.x) < COOK_REACH && Math.abs(player.y - f.y) < COOK_REACH - 6;
-  const raw = inv.fish > 0 ? 'fish' : inv.egg > 0 ? 'egg' : null;
+  const raw = ['fish', 'meat', 'egg'].find((k) => inv[k] > 0) || null;
   if (near && raw) sayOnce('cook', '모닥불 옆에 있으면 저절로 구워요');
   if (f.cook == null) {
     if (near && raw) { inv[raw]--; f.kind = raw; f.cook = 0; refreshHud(); }
@@ -125,6 +125,7 @@ function update() {
   });
 
   chickens.forEach(updateChicken);
+  if (player.moving) catchChicken();
 
   // 통나무 · 달걀: 튀어 올랐다 떨어지고, 가까우면 빨려 온다
   for (let k = items.length - 1; k >= 0; k--) {
@@ -149,6 +150,7 @@ function update() {
       if (it.kind === 'log' && inv.log === COOP_COST && !coops.length) sayOnce('coopReady', '통나무 5개! 닭장을 지을 수 있어요');
       if (it.kind === 'fried') sayOnce('fried', '구운 달걀! 아래 버튼으로 먹을 수 있어요');
       if (it.kind === 'fish') sayOnce('gotfish', '물고기를 낚았다! 모닥불에 구우면 든든해요');
+      if (it.kind === 'roast') sayOnce('roast', '구운 닭고기! 제일 든든해요');
     } else if (d < 28) {
       const sp = Math.min(d, 1.2 + (28 - d) * 0.08);
       it.x += dx / d * sp; it.y += dy / d * sp;

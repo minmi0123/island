@@ -7,7 +7,7 @@
 // 위치를 옮길 때는 걷지 않고 바로 세운다(standAt). 길 찾기가 아니라 섬의 규칙을 확인하는 스크립트라서.
 'use strict';
 (async () => {
-  const EXPECT = '6c63d3fe';   // 마지막으로 통과한 지문 (2026-10-18, 가방)
+  const EXPECT = 'c55672c0';   // 마지막으로 통과한 지문 (2026-10-18, 닭 사냥)
 
   const out = [];
   const toasts = [];
@@ -95,7 +95,7 @@
     const food = eatWhat();
     const full0 = player.full;
     document.getElementById('eat').click();
-    const want = Math.min(FULL_MAX, full0 + (food === 'grilled' ? FULL_PER_FISH : FULL_PER_EGG));
+    const want = Math.min(FULL_MAX, full0 + FOOD[food].full);
     return Math.abs(player.full - want) < 1e-9;
   }
 
@@ -237,6 +237,30 @@
       && document.querySelector('#bag-list').textContent.includes('구운 달걀 1'));
     document.getElementById('bag-close').click();
     check('가방 닫기', !bagOpen && !document.getElementById('bag').classList.contains('on'));
+
+    // 닭 사냥: 다 큰 닭에 걸어서 닿으면 잡힌다. 병아리는 안 잡힌다. 닭고기는 구워 먹는다
+    const SIDES = [[-3, 0], [3, 0], [0, -3], [0, 3]];
+    const walkInto = (ch) => {   // 닭 바로 옆에 서서 닭 쪽으로 한 걸음
+      const at = SIDES.find(([dx, dy]) => standAt(ch.x + dx, ch.y + dy));
+      if (!at) return false;
+      const key = at[0] < 0 ? 'arrowright' : at[0] > 0 ? 'arrowleft' : at[1] < 0 ? 'arrowdown' : 'arrowup';
+      keys[key] = true; run(1); keys[key] = false;
+      return true;
+    };
+    const awayFromHens = (c) => chickens.every((o) => o === c || o.baby > 0 || Math.hypot(o.x - c.x, o.y - c.y) > 16);
+    spawnChick(coops[0]);
+    const baby = chickens.find((c) => c.baby > 0 && awayFromHens(c));
+    const hens0 = chickens.length;
+    check('병아리는 안 잡힘', !!baby && walkInto(baby) && chickens.includes(baby) && chickens.length === hens0 && !today.hunt, `닭 ${hens0} → ${chickens.length}`);
+    const hen = chickens.find((c) => !(c.baby > 0) && awayFromHens(c) && SIDES.some(([dx, dy]) => !blocked(c.x + dx, c.y + dy)));
+    check('닭 잡기', !!hen && walkInto(hen) && !chickens.includes(hen) && chickens.length === hens0 - 1 && today.hunt === 1
+      && items.some((it) => it.kind === 'meat'), `닭 ${hens0} → ${chickens.length}`);
+    check('닭고기 줍기', run(120, () => inv.meat >= 1), `닭고기 ${inv.meat}`);
+    atFire();
+    const roasted = run(60 * 20, () => inv.roast >= 1);
+    const meatFull = player.full;
+    check('닭고기 굽기 · 먹기', roasted && eatWhat() === 'roast' && eat() && inv.roast === 0 && today.ateMeat === 1
+      && Math.abs(player.full - Math.min(FULL_MAX, meatFull + FULL_PER_MEAT)) < 1e-9, `배 ${meatFull.toFixed(1)} → ${player.full.toFixed(1)}`);
 
     // 10. 모닥불 옆에서 자기: 집보다 배가 더 고프다
     atFire();

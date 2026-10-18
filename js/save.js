@@ -6,7 +6,7 @@
 const SAVE_KEY = CHECK ? 'island-save-check' : 'island-save';   // 확인 모드는 진짜 저장본을 건드리지 않는다
 const SAVE_VER = 1;
 const SAVE_EVERY = 60 * 5;
-const ITEM_KINDS = ['log', 'egg', 'fried', 'fish', 'grilled'];
+const ITEM_KINDS = ['log', 'egg', 'fried', 'fish', 'grilled', 'meat', 'roast'];
 let noSave = false;   // 처음부터 누른 뒤 페이지를 떠날 때 다시 저장되지 않게
 
 function saveGame() {

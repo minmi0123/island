@@ -2,7 +2,7 @@
 'use strict';
 
 const player = { x: spawn.i * TILE + 8, y: spawn.j * TILE + 12, dir: 1, step: 0, moving: false, swing: 0, cool: 0, target: null, full: FULL_START, still: 0, fish: null };
-const inv = { log: 0, egg: 0, fried: 0, fish: 0, grilled: 0 };
+const inv = { log: 0, egg: 0, fried: 0, fish: 0, grilled: 0, meat: 0, roast: 0 };
 const trees = [];
 const items = [];
 const parts = [];

@@ -3,7 +3,7 @@
 'use strict';
 
 const freshDay = () => ({
-  chop: 0, log: 0, egg: 0, fish: 0, miss: 0, early: 0, scared: 0, ateEgg: 0, ateFish: 0, cooked: 0,
+  chop: 0, log: 0, egg: 0, fish: 0, miss: 0, early: 0, scared: 0, ateEgg: 0, ateFish: 0, cooked: 0, hunt: 0, ateMeat: 0,
   hungry: 0, starve: 0, walk: 0, fire: 0, coop: 0, house: 0, chick: 0, grown: 0, outside: 0, raft: 0,   // hungry · starve 는 프레임, walk 는 px
 });
 let today = freshDay();
@@ -40,12 +40,17 @@ function diaryCandidates(d, firstDay) {
   if (d.grown) add('chicken', 45, d.grown, '병아리가 닭이 됐다. 다 컸다고 나를 피하기 시작했다.');
   if (d.scared >= 3) add('chicken', 35 + d.scared, d.scared, firstDay ? '닭들은 나를 보자마자 도망갔다. {n}번이나.' : '닭들이 오늘도 나를 피했다. {n}번.', '닭 한 마리와 눈이 마주쳤다. 먼저 피한 건 닭이었다.');
   else if (firstDay) add('chicken', 20, 0, '닭들은 아직 나를 모른다. 알고 싶어 하지도 않는다.');
+  if (d.hunt && !chickens.length) add('hunt', 98, 0, '마지막 닭을 잡았다. 이제 아침이 조용하다.');
+  else if (d.hunt && !ever.hunt) add('hunt', 92, d.hunt, '처음으로 닭을 잡았다. 남은 닭들의 눈빛이 달라졌다.', '닭을 잡았다. 미안하다고 했지만 닭은 듣지 않았다.');
+  else if (d.hunt >= 3) add('hunt', 70 + d.hunt, d.hunt, '닭을 {n}마리 잡았다. 섬의 닭들 사이에서 나는 전설이 됐다.', '닭 {n}마리. 닭장 쪽이 이상하게 조용하다.');
+  else if (d.hunt) add('hunt', 60 + d.hunt, d.hunt, '닭을 {n}마리 잡았다. 오늘 닭들 사이에 소문이 돌았을 것이다.', '닭 {n}마리를 구석으로 몰았다. 나도 숨이 찼다.', '닭을 {n}마리 잡았다. 남은 닭들이 나를 멀찍이서 본다.');
   if (d.egg) add('egg', 35 + d.egg, d.egg, '달걀을 {n}개 주웠다. 닭들은 모르는 척했다.', '달걀 {n}개. 닭들에게 빚이 늘어 간다.', '달걀을 {n}개 주웠다. 아직 따뜻했다.');
 
   if (d.starve > 60 * 10) add('food', 80, 0, '배가 너무 고파서 도끼가 두 배로 무거웠다.', '쫄쫄 굶었다. 배에서 파도 소리가 났다.');
   else if (d.hungry > 60 * 20) add('food', 50, 0, '하루 종일 배가 고팠다. 내일은 먹고 시작하자.', '배꼽시계가 하루 종일 울렸다.');
-  else if (!d.ateEgg && !d.ateFish) add('food', firstDay ? 15 : 45, 0, '아무것도 먹지 않았다. 대단한 건지 바보인 건지 모르겠다.');
+  else if (!d.ateEgg && !d.ateFish && !d.ateMeat) add('food', firstDay ? 15 : 45, 0, '아무것도 먹지 않았다. 대단한 건지 바보인 건지 모르겠다.');
   if (d.ateFish) add('food', 35, d.ateFish, '구운 생선을 먹었다. 오늘 제일 잘한 일이다.');
+  if (d.ateMeat) add('food', 40, d.ateMeat, '구운 닭고기를 먹었다. 달걀보다 훨씬 든든하다.', '닭고기를 뜯었다. 닭들이 보고 있었다.');
   if (d.ateEgg >= 3) add('food', 35, d.ateEgg, '구운 달걀을 {n}개 먹었다. 이제 달걀 맛을 가린다.');
   else if (d.ateEgg) add('food', 25, d.ateEgg, '구운 달걀을 먹었다. 소금이 있으면 좋겠다.');
   if (d.cooked >= 3) add('cook', 25, d.cooked, '모닥불 앞에서 {n}번 요리했다. 요리에 소질이 있는 것 같다.');

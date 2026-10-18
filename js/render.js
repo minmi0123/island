@@ -111,8 +111,8 @@ function drawItem(it) {
   ctx.globalAlpha = 1;
   if (it.kind === 'egg') ctx.drawImage(SPR.egg, x - 3, y - 5 - Math.round(it.z) - float);
   else if (it.kind === 'fried') ctx.drawImage(SPR.fried, x - 3, y - 5 - Math.round(it.z) - float);
-  else if (it.kind === 'fish' || it.kind === 'grilled') ctx.drawImage(SPR[it.kind], x - 5, y - 5 - Math.round(it.z) - float);
-  else ctx.drawImage(SPR.log, x - 4, y - 4 - Math.round(it.z) - float);
+  else if (it.kind === 'log') ctx.drawImage(SPR.log, x - 4, y - 4 - Math.round(it.z) - float);
+  else ctx.drawImage(SPR[it.kind], x - 5, y - 5 - Math.round(it.z) - float);   // 물고기 · 닭고기
 }
 
 function drawChicken(ch) {
