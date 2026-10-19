@@ -1,6 +1,6 @@
 // 한 판 해 보기 봇: 숫자(js/data.js)를 바꾼 뒤 처음부터 엔딩까지 걸리는 시간을 잰다
 // 입력은 방향키 · 스페이스 · 버튼 클릭만. 게임 상태는 읽기만 한다 (순간이동 · 통나무 넣기 없음)
-// 안내가 시키는 대로: 모닥불 → 닭장 → 집 → 잠, 뗏목 날이 되면 뗏목 → 생선 낚기 → 떠나기
+// 안내가 시키는 대로: 모닥불 → 닭장 → 집 → 뗏목 → 생선 낚기 → 떠나기. 쉬지 않고 일만 한다 (기절은 play.log 에 남는다)
 // 쓰는 법: 보통 모드(index.html, 저장본 지우고)에서 이 파일을 <script> 로 붙인다. 실제 속도로 돈다 (4분쯤)
 //   window.play.done 이 참이 되면 끝. play.total = 걸린 초, play.log = 시간별 기록, play.spent = 한 일별 프레임
 //   봇은 길을 아는 사람이라 사람보다 빠르다. 처음 하는 사람은 두세 배로 본다
@@ -9,7 +9,7 @@
   const t0 = performance.now();
   const log = [];
   const sec = () => +((performance.now() - t0) / 1000).toFixed(1);
-  const L = (msg) => { log.push({ s: sec(), t, day, msg }); };
+  const L = (msg) => { log.push({ s: sec(), t, hp: Math.round(player.hp), msg }); };
   const spent = {};   // 하는 일별 프레임
   window.play = { log, spent, done: false };
 
@@ -120,7 +120,7 @@
   }
 
   // ── 상태 ──
-  let readSince = 0, mode = '', lastDay = day, biteSeen = 0, choiceSeen = false, phase = 'play';
+  let mode = '', biteSeen = 0, choiceSeen = false, wasFaint = false;
   const food = () => inv.fried + inv.grilled;
   const raw = () => inv.egg + inv.fish;
   const groundItems = () => items.filter((it) => it.z === 0 && it.vz === 0 && landAt(it.x, it.y + 2));
@@ -161,23 +161,18 @@
   function step() {
     if (window.play.done) return;
     if (nudge > 0) { nudge--; steer(nudgeDir[0], nudgeDir[1]); if (!nudge) path = null; return; }   // 끼었을 때 아무 쪽으로 조금
-    if (day !== lastDay) { L('== ' + day + '일째 =='); lastDay = day; }
     if (endingOpen) {
       stop();
       if (!window.play.done) { L('엔딩 카드'); window.play.done = true; window.play.total = sec(); }
       return;
     }
-    if (bookOpen) { click('book-close'); return; }
-    if (sleeping) {
+    if (fainting) {
       stop();
-      spent.night = (spent.night || 0) + 1;
-      const page = document.getElementById('page');
-      if (page.classList.contains('show')) {
-        if (!readSince) readSince = performance.now();
-        if (performance.now() - readSince > 5000) { L('일기 읽음: ' + document.getElementById('page-lines').innerText.replace(/\n/g, ' / ')); document.getElementById('wake').click(); readSince = 0; }
-      }
+      if (!wasFaint) { wasFaint = true; L('== 기절 (' + (house ? '집' : '바닷가') + '에서 깨어남) =='); }
+      spent.faint = (spent.faint || 0) + 1;
       return;
     }
+    wasFaint = false;
     if (choiceOpen) {
       stop();
       const go = document.getElementById('go');
@@ -205,8 +200,8 @@
     if (!coops.length) { if (inv.log >= COOP_COST) { setMode('닭장 짓기'); doBuild('coop'); } else { setMode('나무 (닭장)'); goChop(); } return; }
     if (!house) { if (inv.log >= HOUSE_COST) { setMode('집 짓기'); doBuild('house'); } else { setMode('나무 (집)'); goChop(); } return; }
 
-    // 뗏목
-    if (day >= RAFT_DAY) {
+    // 뗏목 (집이 있으면)
+    {
       if (!raft) {
         setMode('뗏목 터');
         const dirs = [[24, 0], [-24, 0], [0, 26], [0, -22]];
@@ -235,17 +230,6 @@
       return;
     }
 
-    // 잘 수 있으면 잔다
-    if (sleepCool === 0) {
-      setMode('자러 감');
-      if (goTo('door', (x, y) => Math.abs(x - house.x) < 7 && y > house.y + 2 && y < house.y + 12)) {
-        if (click('sleep')) L('잠');
-      }
-      return;
-    }
-    // 그 밖엔: 배가 고프고 먹을 게 없으면 낚시, 아니면 나무
-    if (player.full < 60 && food() === 0) { setMode('낚시 (먹을 것)'); goFish(); }
-    else { setMode('기다림: 나무'); goChop(); }
   }
 
   let stuckAt = null, stuckN = 0;
@@ -253,7 +237,7 @@
     try {
       step();
       // 같은 자리에서 오래 걷는 척만 하면 기록
-      if (!sleeping && player.moving && stuckAt && Math.hypot(stuckAt[0] - player.x, stuckAt[1] - player.y) < 0.5) { if (++stuckN === 60) { L('막힘? ' + mode + ' @' + Math.round(player.x) + ',' + Math.round(player.y)); nudge = 12; nudgeDir = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(Math.random() * 4)]; stuckN = 0; } }
+      if (!fainting && player.moving && stuckAt && Math.hypot(stuckAt[0] - player.x, stuckAt[1] - player.y) < 0.5) { if (++stuckN === 60) { L('막힘? ' + mode + ' @' + Math.round(player.x) + ',' + Math.round(player.y)); nudge = 12; nudgeDir = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(Math.random() * 4)]; stuckN = 0; } }
       else { stuckN = 0; stuckAt = [player.x, player.y]; }
     } catch (e) { L('봇 오류: ' + e.message); window.play.done = true; }
     if (!window.play.done) requestAnimationFrame(loop);

@@ -7,6 +7,13 @@ const REACH_X = 15, REACH_Y = 9;
 const SWING_LEN = 24, HIT_AT = 10;
 const REGROW = 60 * 40;
 
+// 체력: 일(도끼질 · 낚시)을 하면 준다. 0 이면 기절
+const HP_MAX = 100;
+const HP_PER_HIT = 3;                          // 도끼질 한 번 (나무 한 그루 = 3번)
+const HP_PER_CAST = 2;                         // 낚싯대 한 번 던지기
+const HP_REST = HP_MAX / (60 * 90);            // 일을 안 하면 90초면 다 찬다 (배가 비어 있으면 안 찬다)
+const HP_STARVE = HP_MAX / (60 * 90);          // 배가 비면 90초면 바닥
+
 // 배부름
 const FULL_MAX = 100, FULL_START = 80;
 const FULL_DRAIN = FULL_MAX / (60 * 150);      // 가만히 있어도 2분 30초면 바닥
@@ -46,21 +53,15 @@ const FISH_STILL = 30;                         // 이만큼 가만히 서 있으
 const FISH_WAIT_MIN = 60 * 2, FISH_WAIT_MAX = 60 * 5;
 const FISH_BITE = 50;                          // 찌가 들어가 있는 시간. 이 안에 눌러야 잡힌다
 
-// 잠
-const SLEEP_COOL = 60 * 60;                    // 한 번 자고 나면 이만큼은 다시 못 잔다
-const SLEEP_HUNGER = 15;                       // 집에서 자고 일어나면 배가 이만큼 꺼져 있다
-const SLEEP_HUNGER_OUT = 25;                   // 모닥불 옆(바깥)에서 자면
-const NIGHT_EGG_LIMIT = 8;                     // 밤사이 낳는 알은 땅에 이만큼까지
+// 가방
+const BAG_SLOTS = 50;                          // 칸 수
+const BAG_STACK = 99;                          // 한 칸에 같은 것 이만큼까지
 
-// 뗏목 · 엔딩
-const RAFT_DAY = 4;                            // 이 날부터 뗏목을 만들 수 있다
+// 뗏목 · 엔딩 (집을 지으면 뗏목도 엮을 수 있다. 탈출 테크는 7단계에서 다시 짠다)
 const RAFT_LOGS = 30;                          // 뗏목 하나에 드는 통나무
 const RAFT_FEED = 15;                          // 뗏목 옆에 서 있으면 이 간격으로 통나무를 하나씩 엮는다
 const RAFT_FISH = 2;                           // 떠날 때 챙겨야 하는 구운 생선 (뗏목 터를 잡으면 먹기는 달걀부터)
 const SAIL_TIME = 60 * 4;                      // 떠나는 장면 길이
-
-// 일기
-const DIARY_LINES = 3;                         // 하루 일기 본문 줄 수 (맺음말 빼고)
 
 const fishWait = () => FISH_WAIT_MIN + Math.floor(rand() * (FISH_WAIT_MAX - FISH_WAIT_MIN));
 const nextEgg = () => EGG_MIN + Math.floor(rand() * (EGG_MAX - EGG_MIN));

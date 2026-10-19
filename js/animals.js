@@ -27,7 +27,7 @@ function updateChicken(ch) {
   if (player.moving && pd < CHICKEN_NOTICE && ch.state !== 'flee') {
     ch.state = 'flee';
     note('scared');
-    if (ever.scared + today.scared >= HUNT_HINT && !ch.baby) sayOnce('huntIdea', '닭을 구석으로 몰면 잡을 수 있을 것 같아요');
+    if (stats.scared >= HUNT_HINT && !ch.baby) sayOnce('huntIdea', '닭을 구석으로 몰면 잡을 수 있을 것 같아요');
     ch.timer = 40;
     burst(ch.x, ch.y - 6, ['#ffffff'], 2, 0.5);   // 깃털
   }

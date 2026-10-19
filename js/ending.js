@@ -1,50 +1,34 @@
-// 엔딩: 마지막 일기 · 칭호 · 엔딩 카드(이미지 한 장). 기획.md "끝: 뗏목"
+// 엔딩: 칭호 · 엔딩 카드(이미지 한 장). 카드에 무엇을 담을지는 탈출 테크(기획.md 7단계)에서 다시 정한다
 // 카드는 기기 안에서만 만든다. "이미지 저장" 은 폰의 공유 창이나 내려받기만 연다 (어디에도 올리지 않는다)
 'use strict';
 
 let endingOpen = false;
 let lastCard = null;   // 확인용: 마지막으로 그린 카드 내용
 
-// 떠나는 날 / 남기로 한 날의 일기. 일기장에 end 표시를 달아 넣는다
-function finalDiary(kind) {
-  const lines = kind === 'leave' ? [
-    '뗏목을 띄웠다. 섬이 점점 작아진다.',
-    `${day}일 동안 고마웠다, 섬아.`,
-    chickens.length ? '닭들은 끝까지 배웅하지 않았다.' : '배웅해 주는 이는 없었다. 파도만 손을 흔들었다.',
-    '이 일기는 바다 위에서 마저 쓴다.',
-  ] : [
-    '뗏목을 다 엮었는데, 떠나지 않기로 했다.',
-    house ? '여기엔 내 집이 있다. 닭들도 있다. 피하긴 하지만.' : '여기엔 닭들이 있고, 내일 벨 나무가 있다.',
-    '섬에 남기로 했다. 내일도 일기를 쓰겠지.',
-  ];
-  diary.push({ day, lines, end: kind });
-}
-
-// 지금까지 가장 많이 한 일로 칭호를 정한다. 기준치(norm)만큼 했으면 1점
+// 칭호: 지금까지 가장 많이 한 일. [셈 이름, 기준치(이만큼 했으면 1점), 칭호, 카드에 들어갈 한 줄]
+const TITLES = [
+  ['fish', 8, '낚시꾼', '물고기들은 아직도 내 이름을 모른다.'],
+  ['chop', 25, '나무꾼', '섬이 조금 휑해졌다. 미안하다, 나무야.'],
+  ['egg', 15, '닭 집사', '닭들에게 진 빚은 바다 건너에서 갚겠다.'],
+  ['scared', 30, '닭들의 공포', '닭들은 끝까지 나를 피했다.'],
+  ['starve', 3600, '배고픈 철학자', '배에서 파도 소리가 났다.'],
+  ['walk', 30000, '섬 산책왕', '섬을 몇 바퀴는 걸은 것 같다.'],
+  ['cooked', 10, '모닥불 요리사', '불 앞에 있으면 덜 외로웠다.'],
+  ['hunt', 4, '닭 사냥꾼', '남은 닭들이 나를 멀찍이서 배웅했다.'],
+  ['faint', 3, '자주 쓰러지는 사람', '쓰러질 때마다 섬이 나를 일으켜 세웠다.'],
+];
 function islandTitle(kind) {
-  const e = {};
-  Object.keys(ever).forEach((k) => { e[k] = ever[k] + today[k]; });
-  const cands = [
-    [e.fish / 8, '낚시꾼'], [e.chop / 25, '나무꾼'], [e.egg / 15, '닭 집사'], [e.scared / 30, '닭들의 공포'],
-    [e.starve / 3600, '배고픈 철학자'], [e.walk / 30000, '섬 산책왕'], [e.cooked / 10, '모닥불 요리사'],
-    [e.outside / 3, '별 보며 자는 사람'], [e.hunt / 4, '닭 사냥꾼'], [e.miss > e.fish ? e.miss / 6 : 0, '놓친 게 더 많은 어부'],
-  ];
+  const cands = TITLES.map(([k, norm, name, line]) => [stats[k] / norm, name, line]);
+  if (stats.miss > stats.fish) cands.push([stats.miss / 6, '놓친 게 더 많은 어부', '놓친 물고기 얘기는 하지 않겠다.']);
   const best = cands.reduce((a, b) => (b[0] > a[0] ? b : a));
-  const name = best[0] >= 1 ? best[1] : '평범한 표류자';
-  if (day >= 10) return '오래 버틴 ' + name;
-  if (kind === 'leave' && day <= RAFT_DAY) return '번개같이 떠난 ' + name;
-  return name;
+  const [score, name, line] = best[0] >= 1 ? best : [0, '평범한 표류자', '바다 건너엔 뭐가 있을까.'];
+  let prefix = '';
+  if (stats.play >= 60 * 60 * 120) prefix = '오래 버틴 ';                              // 2시간 넘게
+  else if (kind === 'leave' && stats.play < 60 * 60 * 10) prefix = '번개같이 떠난 ';    // 10분 안에
+  return { title: prefix + name, line, score };
 }
 
-// 일기에서 한 줄 고르기: 맺음말과 엔딩 일기는 빼고
-function cardQuote() {
-  const pool = diary.filter((en) => !en.end).flatMap((en) => en.lines.slice(0, -1));
-  if (!pool.length) return '섬에서 보낸 날들.';
-  const r = rng(day * 31 + diary.length);
-  return pool[Math.floor(r() * pool.length)];
-}
-
-// 카드 위쪽 그림 82x48: 섬 + (떠나기) 바다 위 뗏목 / (남기) 섬 위 주인공
+// 카드 위쪽 그림 82x48: 섬 + 바다 위 뗏목
 function cardScene(kind) {
   const cv = document.createElement('canvas');
   cv.width = 82; cv.height = 48;
@@ -66,7 +50,7 @@ function cardScene(kind) {
   for (let x = 6; x < 56; x += 3) if (!land(x, 40) && cliff(x, 39)) r(x, 41, 2, 1, C.foam);
   g.drawImage(SPR.tree, 7, 9);
   g.drawImage(SPR.tree, 22, 5);
-  if (kind === 'leave') {
+  {
     g.drawImage(SPR.chicken.right.stand, 38, 22);
     const x = 66, y = 36;   // 바다 위 뗏목
     r(x - 9, y + 4, 18, 1, C.foam);
@@ -75,14 +59,6 @@ function cardScene(kind) {
     r(x - 5, y - 17, 8, 9, PALETTE.o); r(x - 4, y - 16, 6, 7, '#fbfaf5'); r(x - 4, y - 13, 6, 2, '#e8434a');
     g.drawImage(SPR.hero.left, x - 8, y - 9);
     for (let k = 0; k < 3; k++) r(x + 10 + k * 4, y + 1 + (k % 2), 2, 1, C.foam);   // 물보라
-  } else {
-    g.drawImage(SPR.hero.right, 36, 20);
-    g.drawImage(SPR.chicken.left.stand, 47, 22);
-    g.drawImage(SPR.fireBase, 24, 28);
-    r(29, 24, 2, 4, '#ff9a3c'); r(29, 26, 2, 2, '#ffe066');
-    const x = 66, y = 36;   // 물가에 매어 둔 뗏목
-    for (let k = 0; k < 6; k++) { r(x - 9 + k * 3, y - 3, 3, 7, PALETTE.o); r(x - 8 + k * 3, y - 2, 1, 5, PALETTE.t); }
-    r(x - 10, y + 4, 20, 1, C.foam);
   }
   return cv;
 }
@@ -100,9 +76,8 @@ function drawCard(kind) {
   g.imageSmoothingEnabled = false;
   g.drawImage(cardScene(kind), 16, 16, 328, 192);
 
-  const head = kind === 'leave' ? `${day}일 만에 섬을 떠났다` : `${day}일째, 섬에 남기로 했다`;
-  const title = islandTitle(kind);
-  const quote = cardQuote();
+  const head = stats.play < 3600 ? '1분도 안 돼서 섬을 떠났다' : `${playTime()} 만에 섬을 떠났다`;
+  const { title, line: quote } = islandTitle(kind);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillStyle = PALETTE.o;
@@ -121,15 +96,15 @@ function drawCard(kind) {
   lines.forEach((s, i) => g.fillText(s, 180, 352 + i * 27 - (lines.length - 1) * 13));
 
   const e = {};
-  Object.keys(ever).forEach((k) => { e[k] = Math.round(ever[k] + today[k]); });
+  Object.keys(stats).forEach((k) => { e[k] = Math.round(stats[k]); });
   g.font = `600 13px ${FONT}`;
   g.fillStyle = '#8a6a5a';
   g.fillText(`나무 ${e.chop}그루 · 물고기 ${e.fish}마리 · 달걀 ${e.egg}개` + (e.hunt ? ` · 닭 ${e.hunt}마리` : ''), 180, 470);
-  g.fillText(`일기 ${diary.length}편`, 180, 492);
+  g.fillText(`기절 ${e.faint}번`, 180, 492);
   g.fillStyle = '#c4a47e';
   g.fillRect(150, 516, 60, 1);
   g.font = `800 12px ${FONT}`;
-  g.fillText('외딴 섬 일기', 180, 534);
+  g.fillText('외딴 섬', 180, 534);
 
   lastCard = { kind, head, title, quote };
   return cv;
@@ -151,7 +126,7 @@ let cardCanvas = null;
 function showEnding(kind) {
   cardCanvas = drawCard(kind);
   document.getElementById('ending-card').src = cardCanvas.toDataURL('image/png');
-  document.getElementById('ending-next').textContent = kind === 'leave' ? '처음부터 다시' : '섬에서 계속 지내기';
+  document.getElementById('ending-next').textContent = '처음부터 다시';
   endingOpen = true;
   joy = null;
   toastTimer = 0;
@@ -164,15 +139,15 @@ async function saveCard() {
   if (!cardCanvas) return;
   const blob = await new Promise((res) => cardCanvas.toBlob(res, 'image/png'));
   if (!blob) return;
-  const file = new File([blob], 'island-diary.png', { type: 'image/png' });
+  const file = new File([blob], 'island-card.png', { type: 'image/png' });
   try {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '외딴 섬 일기' }); return; }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '외딴 섬' }); return; }
   } catch (e) {
     if (e.name === 'AbortError') return;   // 사용자가 닫음
   }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'island-diary.png';
+  a.download = 'island-card.png';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }

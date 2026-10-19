@@ -14,20 +14,16 @@ function saveGame() {
   const data = {
     v: SAVE_VER,
     at: Date.now(),
-    player: { x: Math.round(player.x), y: Math.round(player.y), dir: player.dir, full: Math.round(player.full * 10) / 10 },
+    player: { x: Math.round(player.x), y: Math.round(player.y), dir: player.dir, full: Math.round(player.full * 10) / 10, hp: Math.round(player.hp * 10) / 10 },
     inv: { ...inv },
     trees: { n: trees.length, list: trees.map((tr) => [tr.state === 'tree' ? 1 : 0, tr.hp, tr.regrow]) },   // 섬은 시드로 똑같이 만들어지므로 순서로 맞춘다
     fires: fires.map((f) => ({ x: f.x, y: f.y, cook: f.cook ?? null, kind: f.kind ?? null })),
     coops: coops.map((c) => ({ x: c.x, y: c.y, timer: c.timer })),
     house: house ? { x: house.x, y: house.y } : null,
-    day,
-    sleepCool,
     chickens: chickens.map((ch) => ({ x: Math.round(ch.x), y: Math.round(ch.y), dir: ch.dir, egg: ch.egg, baby: ch.baby || 0 })),
     items: items.map((it) => ({ kind: it.kind, x: Math.round(it.x), y: Math.round(it.y) })),
     said: { ...said },
-    diary,
-    today: Object.fromEntries(Object.entries(today).map(([k, v]) => [k, Math.round(v)])),
-    ever: Object.fromEntries(Object.entries(ever).map(([k, v]) => [k, Math.round(v)])),
+    stats: Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, Math.round(v)])),
     firstEgg,
     raft: raft && { x: Math.round(raft.x), y: Math.round(raft.y), logs: raft.logs },
     ended,
@@ -46,6 +42,7 @@ function loadGame() {
   if (!blocked(px, py)) { player.x = px; player.y = py; }
   player.dir = d.player.dir === -1 ? -1 : 1;
   player.full = Math.max(0, Math.min(FULL_MAX, num(d.player.full, FULL_START)));
+  player.hp = Math.max(1, Math.min(HP_MAX, num(d.player.hp, HP_MAX)));
   Object.keys(inv).forEach((k) => { inv[k] = Math.max(0, Math.floor(num(d.inv?.[k], 0))); });
 
   if (d.trees?.n === trees.length) arr(d.trees.list).forEach((row, i) => {
@@ -76,22 +73,12 @@ function loadGame() {
   });
   Object.assign(said, d.said && typeof d.said === 'object' ? d.said : {});
   firstEgg = !!d.firstEgg;
-  diary.length = 0;
-  arr(d.diary).forEach((e) => {
-    const lines = arr(e?.lines).filter((s) => typeof s === 'string');
-    if (!lines.length) return;
-    const entry = { day: Math.max(1, Math.floor(num(e.day, 1))), lines };
-    if (e.end === 'leave' || e.end === 'stay') entry.end = e.end;
-    diary.push(entry);
-  });
-  Object.keys(today).forEach((k) => { today[k] = Math.max(0, num(d.today?.[k], 0)); });
-  Object.keys(ever).forEach((k) => { ever[k] = Math.max(0, num(d.ever?.[k], 0)); });
+  // 예전 저장본(일기 시절)은 stats 대신 ever + today 로 셌다
+  Object.keys(stats).forEach((k) => { stats[k] = Math.max(0, d.stats ? num(d.stats[k], 0) : num(d.ever?.[k], 0) + num(d.today?.[k], 0)); });
   house = d.house && typeof d.house.x === 'number' && typeof d.house.y === 'number' ? { x: d.house.x, y: d.house.y } : null;
-  day = Math.max(1, Math.floor(num(d.day, 1)));
-  sleepCool = Math.max(0, num(d.sleepCool, 0));
   raft = d.raft && typeof d.raft.x === 'number' && typeof d.raft.y === 'number'
     ? { x: d.raft.x, y: d.raft.y, logs: Math.max(0, Math.min(RAFT_LOGS, Math.floor(num(d.raft.logs, 0)))) } : null;
-  ended = d.ended === 'stay' || d.ended === 'leave' ? d.ended : null;
+  ended = d.ended === 'leave' ? 'leave' : null;
   return true;
 }
 

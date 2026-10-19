@@ -26,7 +26,6 @@ function refreshHud() {
   document.getElementById('coop').style.display = inv.log >= COOP_COST ? 'flex' : 'none';
   document.getElementById('house').style.display = inv.log >= HOUSE_COST && !house ? 'flex' : 'none';
   document.getElementById('eat').style.display = food ? 'flex' : 'none';
-  document.getElementById('book-open').style.display = diary.length ? 'block' : 'none';
 }
 // 먹기 버튼이 먹는 것: 든든한 것부터. 뗏목 터를 잡은 뒤엔 생선은 바다에서 먹게 맨 뒤로
 function eatWhat() {
@@ -49,11 +48,9 @@ document.getElementById('house').addEventListener('click', () => {
   note('house');
   cam.shake = 6;
   burst(x, y - 12, ['#d9a066', '#5f7fb8', '#ffffff'], 18, 1.6);
-  lastSleepSpot = null;
   refreshHud();
-  toast('집 완성! 문 앞에 서면 잘 수 있어요');
+  toast('집 완성! 쓰러지면 여기서 깨어나요');
 });
-document.getElementById('sleep').addEventListener('click', goToSleep);
 
 document.getElementById('coop').addEventListener('click', () => {
   if (inv.log < COOP_COST) return;

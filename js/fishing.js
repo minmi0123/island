@@ -29,6 +29,7 @@ function updateFishing() {
     const spot = fishingSpot();
     if (!spot) return;
     player.fish = { state: 'cast', timer: 20, ...spot };
+    tire(HP_PER_CAST);
     if (spot.bx !== Math.round(player.x)) player.dir = Math.sign(spot.bx - player.x);
     sayOnce('fishing', '물가에 서 있으면 낚시를 해요');
     return;

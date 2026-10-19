@@ -1,4 +1,5 @@
-// 가방: 가진 것을 한눈에 본다. 음식은 여기서 골라 먹는다. 열려 있는 동안 섬은 멈춘다
+// 가방: 50칸, 한 칸에 같은 것 99개까지. 꽉 차면 더 못 줍는다. 칸을 누르면 먹기 · 버리기 (기획.md "가방")
+// 개수는 inv 하나로 센다. 칸은 거기서 나눠 보여 줄 뿐이다 (통나무 120 = 99 칸 + 21 칸)
 'use strict';
 
 const BAG_ITEMS = [   // 가방에 보이는 순서
@@ -11,35 +12,83 @@ const BAG_ITEMS = [   // 가방에 보이는 순서
   { kind: 'roast', name: '구운 닭고기', say: () => `먹으면 배 +${FULL_PER_MEAT}` },
 ];
 let bagOpen = false;
+let bagSel = -1;   // 고른 칸 번호
+
+const stacksOf = (n) => Math.ceil(n / BAG_STACK);
+const slotsUsed = () => BAG_ITEMS.reduce((s, b) => s + stacksOf(inv[b.kind]), 0);
+// 하나 더 넣을 수 있나: 같은 것이 든 칸에 자리가 있거나, 빈 칸이 있으면
+const canTake = (kind) => (inv[kind] % BAG_STACK !== 0) || slotsUsed() < BAG_SLOTS;
+
+let bagFullAt = -1e9;
+function bagFull() {   // 못 주운 걸 알려 준다 (자꾸 띄우지 않게 5초에 한 번)
+  if (t - bagFullAt < 300) return;
+  bagFullAt = t;
+  toast('가방이 꽉 찼어요. 가방에서 버릴 수 있어요', 150);
+}
+
+// 칸 목록: [{ kind, count }] — 앞에서부터 99 개씩
+function bagCells() {
+  const cells = [];
+  BAG_ITEMS.forEach((b) => {
+    for (let n = inv[b.kind]; n > 0; n -= BAG_STACK) cells.push({ kind: b.kind, count: Math.min(n, BAG_STACK) });
+  });
+  return cells;
+}
 
 function renderBag() {
-  const list = document.getElementById('bag-list');
-  list.innerHTML = '';
-  const have = BAG_ITEMS.filter((b) => inv[b.kind] > 0);
-  if (!have.length) { list.innerHTML = '<p class="bag-empty">가방이 비어 있다.</p>'; return; }
-  have.forEach((b) => {
-    const row = document.createElement('div');
-    row.className = 'bag-row';
-    const icon = document.createElement('img');
-    icon.src = SPR[b.kind].toDataURL();
-    icon.style.width = SPR[b.kind].width * 3 + 'px';   // 도트 한 칸 = 3px
-    const text = document.createElement('div');
-    text.innerHTML = '<b></b><small></small>';
-    text.querySelector('b').textContent = `${b.name} ${inv[b.kind]}`;
-    text.querySelector('small').textContent = b.say();
-    row.append(icon, text);
-    if (FOOD[b.kind]) {
-      const eat = document.createElement('button');
-      eat.className = 'panel';
-      eat.textContent = '먹기';
-      eat.addEventListener('click', () => { eatFood(b.kind); renderBag(); });
-      row.appendChild(eat);
+  const cells = bagCells();
+  if (bagSel >= cells.length) bagSel = cells.length - 1;
+  document.getElementById('bag-count').textContent = `${cells.length} / ${BAG_SLOTS}칸`;
+  const grid = document.getElementById('bag-grid');
+  grid.innerHTML = '';
+  for (let k = 0; k < BAG_SLOTS; k++) {
+    const c = cells[k];
+    const el = document.createElement('div');
+    el.className = 'cell' + (k === bagSel && c ? ' sel' : '');
+    if (c) {
+      const icon = document.createElement('img');
+      icon.src = SPR[c.kind].toDataURL();
+      icon.style.width = SPR[c.kind].width * 3 + 'px';   // 도트 한 칸 = 3px
+      const n = document.createElement('b');
+      n.textContent = c.count;
+      el.append(icon, n);
+      el.addEventListener('click', () => { bagSel = k; renderBag(); });
     }
-    list.appendChild(row);
-  });
+    grid.appendChild(el);
+  }
+
+  const info = document.getElementById('bag-info');
+  info.innerHTML = '';
+  const c = cells[bagSel];
+  if (!c) { info.innerHTML = '<p class="bag-empty">칸을 누르면 먹거나 버릴 수 있다.</p>'; return; }
+  const b = BAG_ITEMS.find((it) => it.kind === c.kind);
+  const text = document.createElement('div');
+  text.innerHTML = '<b></b><small></small>';
+  text.querySelector('b').textContent = `${b.name} ${inv[c.kind]}`;
+  text.querySelector('small').textContent = b.say();
+  const row = document.createElement('div');
+  row.className = 'bag-buttons';
+  const button = (label, fn) => {
+    const el = document.createElement('button');
+    el.className = 'panel';
+    el.textContent = label;
+    el.addEventListener('click', () => { fn(); renderBag(); });
+    row.appendChild(el);
+  };
+  if (FOOD[c.kind]) button('먹기', () => eatFood(c.kind));
+  button('1개 버리기', () => discard(c.kind, 1));
+  if (c.count > 1) button(`${c.count}개 버리기`, () => discard(c.kind, c.count));
+  info.append(text, row);
+}
+
+function discard(kind, n) {
+  inv[kind] = Math.max(0, inv[kind] - n);
+  burst(player.x, player.y - 8, ['#ffffff', '#c9c6d6'], 4, 0.5);
+  refreshHud();
 }
 
 function openBag() {
+  bagSel = -1;
   renderBag();
   bagOpen = true;
   joy = null;

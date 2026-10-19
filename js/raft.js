@@ -1,8 +1,9 @@
-// 뗏목: RAFT_DAY 부터 물가에 터를 잡고, 옆에 서 있으면 통나무를 하나씩 엮는다. 다 되면 떠날지 남을지 고른다
+// 뗏목: 집을 지으면 물가에 터를 잡을 수 있고, 옆에 서 있으면 통나무를 하나씩 엮는다. 다 되면 떠날 수 있다 (안 떠나도 된다)
+// 탈출 테크(기획.md 7단계)에서 다시 짠다
 'use strict';
 
 let raft = null;      // { x, y, logs }
-let ended = null;     // 고른 엔딩 'stay' | 'leave'
+let ended = null;     // 떠났으면 'leave'
 let sail = null;      // 떠나는 중 { t, dx, dy }
 let choiceOpen = false;
 let feedTimer = 0;
@@ -21,10 +22,10 @@ function raftSpot() {
 }
 
 function refreshRaftButtons() {
-  const canStart = day >= RAFT_DAY && !raft && !!raftSpot();
+  const canStart = !!house && !raft && !!raftSpot();
   document.getElementById('raft').style.display = canStart ? 'flex' : 'none';
   document.getElementById('leave').style.display = raftDone() && nearRaft() && ended !== 'leave' ? 'flex' : 'none';
-  if (day >= RAFT_DAY && !raft && toastTimer === 0) sayOnce('raftIdea', '나무를 엮으면 뗏목이 될 것 같아요. 물가에 서 봐요');
+  if (house && !raft && toastTimer === 0) sayOnce('raftIdea', '나무를 엮으면 뗏목이 될 것 같아요. 물가에 서 봐요');
 }
 
 // 매 프레임: 버튼 갱신 · 옆에 서 있으면 통나무 엮기
@@ -47,7 +48,7 @@ function updateRaft() {
 }
 
 document.getElementById('raft').addEventListener('click', () => {
-  if (raft || day < RAFT_DAY) return;
+  if (raft || !house) return;
   const s = raftSpot();
   if (!s) { toast('뗏목은 물가에서 바다 쪽을 보고 만들어요'); return; }
   raft = { x: s.x, y: s.y, logs: 0 };
@@ -62,15 +63,12 @@ document.getElementById('raft').addEventListener('click', () => {
 function openChoice() {
   if (!raftDone() || ended === 'leave') return;
   const ok = fishCount() >= RAFT_FISH;
-  document.getElementById('choice-text').textContent = ended === 'stay'
-    ? '남기로 했었지만… 다시 생각해 볼까?'
-    : '바다 건너엔 뭐가 있을까. 섬을 떠날까?';
+  document.getElementById('choice-text').textContent = '바다 건너엔 뭐가 있을까. 섬을 떠날까?';
   const go = document.getElementById('go');
   go.disabled = !ok;
   document.getElementById('go-need').textContent = ok
     ? `구운 생선 ${RAFT_FISH}마리를 챙긴다`
     : `바다에서 먹을 구운 생선 ${RAFT_FISH}마리가 필요해요 (지금 ${fishCount()})`;
-  document.getElementById('stay').style.display = ended === 'stay' ? 'none' : '';
   choiceOpen = true;
   joy = null;
   document.getElementById('choice').classList.add('on');
@@ -81,13 +79,6 @@ function closeChoice() {
 }
 document.getElementById('leave').addEventListener('click', openChoice);
 document.getElementById('later').addEventListener('click', closeChoice);
-document.getElementById('stay').addEventListener('click', () => {
-  closeChoice();
-  ended = 'stay';
-  finalDiary('stay');
-  saveGame();
-  showEnding('stay');
-});
 document.getElementById('go').addEventListener('click', () => {
   if (fishCount() < RAFT_FISH) return;
   closeChoice();
@@ -98,7 +89,7 @@ document.getElementById('go').addEventListener('click', () => {
   sail = { t: 0, dx: dx / l, dy: dy / l };   // 섬에서 뗏목 쪽으로, 그대로 바다로
   player.fish = null;
   player.swing = 0;
-  ['raft', 'leave', 'sleep', 'build', 'coop', 'house', 'eat'].forEach((id) => { document.getElementById(id).style.display = 'none'; });
+  ['raft', 'leave', 'build', 'coop', 'house', 'eat'].forEach((id) => { document.getElementById(id).style.display = 'none'; });
 });
 
 // 떠나는 장면: 주인공이 뗏목에 올라 바다로 나간다
@@ -122,7 +113,6 @@ function updateSail() {
     setTimeout(() => {
       sail = null;
       ended = 'leave';
-      finalDiary('leave');
       saveGame();
       showEnding('leave');
     }, 900);

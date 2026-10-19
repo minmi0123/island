@@ -1,7 +1,7 @@
 // 게임 상태 · 충돌 · 나무와 닭 처음 배치
 'use strict';
 
-const player = { x: spawn.i * TILE + 8, y: spawn.j * TILE + 12, dir: 1, step: 0, moving: false, swing: 0, cool: 0, target: null, full: FULL_START, still: 0, fish: null };
+const player = { x: spawn.i * TILE + 8, y: spawn.j * TILE + 12, dir: 1, step: 0, moving: false, swing: 0, cool: 0, target: null, full: FULL_START, hp: HP_MAX, still: 0, fish: null };
 const inv = { log: 0, egg: 0, fried: 0, fish: 0, grilled: 0, meat: 0, roast: 0 };
 const trees = [];
 const items = [];
@@ -9,8 +9,6 @@ const parts = [];
 const fires = [];
 const coops = [];
 let house = null;   // 집은 하나
-let day = 1;
-let sleepCool = 0;
 const chickens = [];
 const cam = { x: 0, y: 0, shake: 0 };
 

@@ -7,7 +7,6 @@ if (!CHECK && loadGame()) {
   if (ended === 'leave') showEnding('leave');   // 이미 떠난 섬: 엔딩 카드부터
 }
 refreshHud();
-refreshDay();
 
 cam.x = Math.max(0, Math.min(MAP_W * TILE - W, player.x - W / 2));
 cam.y = Math.max(0, Math.min(MAP_H * TILE - H, player.y - H / 2));
@@ -30,4 +29,4 @@ if (CHECK) {
   document.body.appendChild(s);
 } else requestAnimationFrame(frame);
 
-window.game = { player, trees, items, inv, fires, coops, chickens, tiles, fishingSpot, refreshHud, saveGame, getHouse: () => house, getDay: () => day, setSleepCool: (v) => { sleepCool = v; } };   // 확인용
+window.game = { player, trees, items, inv, fires, coops, chickens, tiles, fishingSpot, refreshHud, saveGame, getHouse: () => house, stats };   // 확인용

@@ -25,6 +25,7 @@ function hitTree(t) {
   if (Math.abs(t.x - player.x) > REACH_X + 3 || Math.abs(t.y - player.y) > REACH_Y + 3) return;
   t.hp--;
   player.full = Math.max(0, player.full - FULL_PER_HIT);
+  tire(HP_PER_HIT);
   t.shake = 10;
   t.hpShow = 90;
   burst(t.x - player.dir * 4, t.y - 8, [PALETTE.l, PALETTE.h, PALETTE.c], 5);
@@ -48,21 +49,6 @@ let firstEgg = false;
 const said = {};   // 한 번만 띄우는 안내
 function sayOnce(key, msg) { if (!said[key]) { said[key] = true; toast(msg, 220); } }
 
-let lastFullDraw = -1;
-function updateHunger() {
-  player.full = Math.max(0, player.full - FULL_DRAIN);
-  if (player.full < 25) note('hungry');
-  if (player.full === 0) note('starve');
-  const pct = Math.round(player.full);
-  if (pct !== lastFullDraw) {
-    lastFullDraw = pct;
-    document.getElementById('hunger-fill').style.width = pct + '%';
-    document.getElementById('hunger').classList.toggle('low', player.full < 25);
-  }
-  if (player.full < 25 && player.full > 0) sayOnce('hungry', inv.fried + inv.grilled ? '배고파요… 구운 달걀을 먹어요' : '배고파요… 달걀을 구워 먹어야겠다');
-  if (player.full === 0) sayOnce('starving', '배가 너무 고파서 힘이 없어요');
-}
-
 // 모닥불 옆에 서 있으면 생선 → 달걀 순서로 하나씩 굽는다
 function updateFire(f) {
   if (t % 10 === 0) parts.push({ x: f.x + Math.round(rand() * 4 - 2), y: f.y - 8, vx: (rand() - 0.5) * 0.3, vy: -0.4 - rand() * 0.3, g: 0, life: 40, age: 0, color: rand() < 0.5 ? '#ffb000' : '#ff7a3c', w: 1 });
@@ -80,9 +66,9 @@ function updateFire(f) {
   burst(f.x, f.y - 14, ['#ffe066', '#ffffff'], 6, 0.8);
 }
 
-let lastSleepSpot = null;
 function update() {
-  if (sleeping || bookOpen || bagOpen || choiceOpen || endingOpen) return;
+  if (fainting || bagOpen || choiceOpen || endingOpen) return;
+  note('play');
   hints.forEach(([at, msg]) => { if (t === at) toast(msg, 220); });
   if (toastTimer > 0 && --toastTimer === 0) document.getElementById('toast').classList.remove('show');
   if (sail) { updateSail(); followCam(); return; }   // 떠나는 중에는 뗏목만 움직인다
@@ -103,7 +89,7 @@ function update() {
     player.swing++;
     if (player.target && Math.abs(player.target.x - player.x) > 2) player.dir = Math.sign(player.target.x - player.x);
     if (player.swing === HIT_AT) hitTree(player.target);
-    if (player.swing >= SWING_LEN) { player.swing = 0; player.cool = player.full > 0 ? 6 : 40; }
+    if (player.swing >= SWING_LEN) { player.swing = 0; player.cool = 6; }
   } else if (player.cool > 0) {
     player.cool--;
   } else {
@@ -139,6 +125,7 @@ function update() {
     }
     if (it.age < 30) continue;
     const dx = player.x - it.x, dy = player.y - 2 - it.y, d = Math.hypot(dx, dy);
+    if (!canTake(it.kind)) { if (d < 12) bagFull(); continue; }   // 가방이 꽉 차면 끌려오지도 않는다
     if (d < 4) {
       items.splice(k, 1);
       inv[it.kind]++;
@@ -159,18 +146,9 @@ function update() {
 
   fires.forEach(updateFire);
   coops.forEach(updateCoop);
-  if (sleepCool > 0) sleepCool--;
-  const spot = sleepSpot();
-  if (spot !== lastSleepSpot) {
-    lastSleepSpot = spot;
-    document.getElementById('sleep').style.display = spot ? 'flex' : 'none';
-    document.getElementById('sleep-where').textContent = spot === 'fire' ? '모닥불 옆에서' : '밤 넘기기';
-    if (spot === 'house') sayOnce('door', '집 앞에서 자면 밤이 지나가요');
-    if (spot === 'fire') sayOnce('fireSleep', '모닥불 옆에서도 잘 수 있어요. 집보다 배가 더 고파요');
-  }
   updateRaft();
   if (house && t % 25 === 0) parts.push({ x: house.x + 9 + Math.round(rand() * 2), y: house.y - 35, vx: 0.1 + rand() * 0.15, vy: -0.25, g: 0, life: 70, age: 0, color: '#d8d8e4', w: 2 });   // 굴뚝 연기
-  updateHunger();
+  updateBody();
 
   parts.forEach((p) => { p.age++; p.x += p.vx; p.y += p.vy; p.vy += p.g; });
   for (let k = parts.length - 1; k >= 0; k--) if (parts[k].age >= parts[k].life) parts.splice(k, 1);

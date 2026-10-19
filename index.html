@@ -18,18 +18,17 @@
   #actions { position: absolute; left: 0; right: 0; bottom: 16px; padding: 0 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; pointer-events: none; }
   #night { position: absolute; inset: 0; background: #1d1a2e; opacity: 0; transition: opacity .8s; pointer-events: none; }
   #night.on { opacity: 1; pointer-events: auto; }
-  #day { margin-right: 2px; }
   #actions button { pointer-events: auto; padding: 6px 12px; font-size: 15px; font-family: inherit; cursor: pointer; display: none; flex-direction: column; align-items: center; line-height: 1.2; white-space: nowrap; }
   #actions button small { font-size: 11px; opacity: .7; }
   #actions button:active { transform: translateY(2px); }
-  #hunger { position: absolute; right: 8px; top: 8px; display: flex; align-items: center; gap: 6px; padding: 4px 8px; font-size: 14px; pointer-events: none; }
-  #hunger .bar { width: 56px; height: 10px; background: #5a4a6a; border: 2px solid #3d2c3a; }
-  #hunger .bar i { display: block; height: 100%; background: #f5b93a; }
-  #hunger.low .bar i { background: #e8434a; }
-  #hunger.low { animation: bump .6s infinite; }
+  #body { position: absolute; right: 8px; top: 8px; display: flex; align-items: center; gap: 5px; padding: 4px 8px; font-size: 13px; pointer-events: none; }
+  #body .bar { width: 40px; height: 10px; background: #5a4a6a; border: 2px solid #3d2c3a; margin-right: 3px; }
+  #body .bar i { display: block; height: 100%; background: #f5b93a; }
+  #body #bar-hp i { background: #6cc26a; }
+  #body .bar.low i { background: #e8434a !important; }
+  #body .bar.low { animation: bump .6s infinite; }
   #menu { position: absolute; right: 8px; top: 46px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
   #menu button { padding: 2px 8px; font-size: 11px; font-family: inherit; cursor: pointer; opacity: .85; }
-  #menu #book-open { display: none; font-size: 13px; padding: 3px 10px; opacity: 1; }
   #menu #bag-open { font-size: 13px; padding: 3px 10px; opacity: 1; }
   /* 일기: 줄 쳐진 종이 */
   .paper { background: #fbf3e0 repeating-linear-gradient(transparent 0 23px, #ead9b8 23px 24px) 0 10px; color: #3d2c3a; border: 3px solid #3d2c3a; border-radius: 4px; box-shadow: 0 4px 0 #0005; padding: 10px 14px 12px; font-size: 14px; line-height: 24px; word-break: keep-all; }
@@ -38,26 +37,20 @@
   .paper h3:first-child { margin-top: 0; }
   .paper p { margin: 0; }
   .paper button { display: block; margin: 12px auto 0; padding: 4px 16px; font-size: 14px; font-family: inherit; font-weight: 800; cursor: pointer; }
-  #page { position: absolute; left: 7%; right: 7%; top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity .6s; pointer-events: none; }
-  #page.show { opacity: 1; pointer-events: auto; }
-  #page.show p, #page.show #wake { animation: ink .7s both; }
-  #page p, #page #wake { opacity: 0; }
-  @keyframes ink { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-  #book { position: absolute; inset: 0; background: #1d1a2ee6; display: none; flex-direction: column; padding: 14px 10px; box-sizing: border-box; }
-  #book.on { display: flex; }
-  #book .paper { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  #book .paper { background-image: none; }
   #bag { position: absolute; inset: 0; background: #1d1a2ecc; display: none; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
   #bag.on { display: flex; }
   #bag .paper { width: 100%; max-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; background-image: none; }
-  #bag-list { overflow-y: auto; min-height: 0; margin-top: 6px; }
-  .bag-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px dashed #ead9b8; }
-  .bag-row:first-child { border-top: 0; }
-  .bag-row img { flex: none; image-rendering: pixelated; }
-  .bag-row div { flex: 1; line-height: 18px; }
-  .bag-row b { display: block; font-size: 15px; }
-  .bag-row small { display: block; font-size: 12px; color: #8a6a5a; }
-  .paper .bag-row button { flex: none; margin: 0; padding: 4px 10px; font-size: 13px; }
+  #bag h2 small { font-size: 12px; color: #8a6a5a; margin-left: 4px; }
+  #bag-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 6px; overflow-y: auto; min-height: 0; flex: 0 1 auto; }
+  .cell { aspect-ratio: 1; background: #f0e2c4; border: 2px solid #e2cfa6; border-radius: 3px; position: relative; display: flex; align-items: center; justify-content: center; }
+  .cell img { image-rendering: pixelated; }
+  .cell b { position: absolute; right: 2px; bottom: 0; font-size: 11px; line-height: 14px; }
+  .cell.sel { border-color: #3d2c3a; background: #fff3d6; }
+  #bag-info { min-height: 76px; margin-top: 8px; line-height: 18px; }
+  #bag-info b { display: block; font-size: 15px; }
+  #bag-info small { display: block; font-size: 12px; color: #8a6a5a; }
+  .bag-buttons { display: flex; gap: 6px; margin-top: 6px; }
+  .paper .bag-buttons button { margin: 0; padding: 4px 10px; font-size: 13px; }
   .bag-empty { color: #8a6a5a; }
   #choice, #ending { position: absolute; inset: 0; background: #1d1a2ecc; display: none; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
   #choice.on, #ending.on { display: flex; }
@@ -69,7 +62,6 @@
   #ending-card { display: block; width: 100%; min-height: 0; flex: 0 1 auto; object-fit: contain; }
   #ending .row { display: flex; gap: 8px; }
   #ending .row button { margin: 10px 0 0; }
-  #book-list { flex: 1; overflow-y: auto; min-height: 0; background: repeating-linear-gradient(transparent 0 23px, #ead9b8 23px 24px); background-attachment: local; }   /* 줄이 글과 같이 스크롤된다 */
   #toast { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); padding: 8px 14px; font-size: 14px; white-space: nowrap; opacity: 0; transition: opacity .4s; pointer-events: none; }
   #toast.show { opacity: 1; }
 </style>
@@ -86,35 +78,27 @@
     <div class="slot panel" id="slot-meat"><img id="icon-meat" alt="" style="width:27px;height:17px"><span id="cnt-meat">0</span></div>
     <div class="slot panel" id="slot-roast"><img id="icon-roast" alt="" style="width:27px;height:17px"><span id="cnt-roast">0</span></div>
   </div>
-  <div id="hunger" class="panel"><span id="day">1일째</span>배<div class="bar"><i id="hunger-fill"></i></div></div>
+  <div id="body" class="panel">체력<div class="bar" id="bar-hp"><i id="hp-fill"></i></div>배<div class="bar" id="bar-full"><i id="hunger-fill"></i></div></div>
   <div id="menu">
     <button id="bag-open" class="panel">가방</button>
-    <button id="book-open" class="panel">일기장</button>
     <button id="reset" class="panel">처음부터</button>
   </div>
   <div id="actions">
     <button id="build" class="panel">모닥불<small>통나무 3</small></button>
     <button id="coop" class="panel">닭장<small>통나무 5</small></button>
     <button id="house" class="panel">집<small>통나무 8</small></button>
-    <button id="sleep" class="panel">자기<small id="sleep-where">밤 넘기기</small></button>
     <button id="raft" class="panel">뗏목<small>터 잡기</small></button>
     <button id="leave" class="panel">떠날까?<small>뗏목</small></button>
     <button id="eat" class="panel">먹기<small id="eat-what">구운 달걀</small></button>
   </div>
-  <div id="night">
-    <div id="page" class="paper"><h2 id="page-day"></h2><div id="page-lines"></div><button id="wake" class="panel">아침으로</button></div>
-  </div>
-  <div id="book">
-    <div class="paper"><h2>섬 일기</h2><div id="book-list"></div><button id="book-close" class="panel">닫기</button></div>
-  </div>
+  <div id="night"></div>
   <div id="bag">
-    <div class="paper"><h2>가방</h2><div id="bag-list"></div><button id="bag-close" class="panel">닫기</button></div>
+    <div class="paper"><h2>가방<small id="bag-count"></small></h2><div id="bag-grid"></div><div id="bag-info"></div><button id="bag-close" class="panel">닫기</button></div>
   </div>
   <div id="choice">
     <div class="paper">
       <h2>뗏목이 다 됐다</h2><p id="choice-text"></p>
       <button id="go" class="panel">떠나기<small id="go-need"></small></button>
-      <button id="stay" class="panel">섬에 남기</button>
       <button id="later" class="panel">아직</button>
     </div>
   </div>
@@ -135,8 +119,8 @@
 <script src="js/game.js"></script>
 <script src="js/animals.js"></script>
 <script src="js/fishing.js"></script>
-<script src="js/night.js"></script>
-<script src="js/diary.js"></script>
+<script src="js/body.js"></script>
+<script src="js/stats.js"></script>
 <script src="js/raft.js"></script>
 <script src="js/ending.js"></script>
 <script src="js/render.js"></script>
